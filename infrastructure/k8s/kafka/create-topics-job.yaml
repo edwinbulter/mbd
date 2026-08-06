@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kafka-create-topics
+  namespace: mbd-infra
+spec:
+  template:
+    metadata:
+      name: kafka-create-topics
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: kafka-topic-creator
+      containers:
+        - name: kafka-topics
+          image: bitnami/kubectl:latest
+          command:
+            - /bin/bash
+            - -c
+            - |
+              # Wait for Kafka to be ready
+              echo "Waiting for Kafka to be ready..."
+              until kubectl exec -n mbd-infra kafka-0 -- sh -c "ls /opt/kafka/bin/kafka-topics.sh" > /dev/null 2>&1; do
+                echo "Kafka not ready yet, waiting..."
+                sleep 5
+              done
+              echo "Kafka is ready. Creating topics..."
+              
+              # Fund price updates topic
+              kubectl exec -n mbd-infra kafka-0 -- sh -c "/opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server localhost:9092 --topic fund-price-updates --partitions 3 --replication-factor 1"
+              
+              # Portfolio updates topic
+              kubectl exec -n mbd-infra kafka-0 -- sh -c "/opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server localhost:9092 --topic portfolio-updates --partitions 3 --replication-factor 1"
+              
+              echo "Kafka topics created successfully"
+              
+              # List topics
+              kubectl exec -n mbd-infra kafka-0 -- sh -c "/opt/kafka/bin/kafka-topics.sh --list --bootstrap-server localhost:9092"
+

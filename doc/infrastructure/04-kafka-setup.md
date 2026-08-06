@@ -79,11 +79,12 @@ metadata:
 data:
   KAFKA_BROKER_ID: "1"
   KAFKA_NODE_ID: "1"
+  CLUSTER_ID: "5c8f3e9f-7b2a-4c1d-9e8f-1a2b3c4d5e6f"
   KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka-0.kafka.mbd-infra.svc.cluster.local:9093"
   KAFKA_LISTENERS: "PLAINTEXT://:9092,BROKER://:9093"
-  KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka.mbd-infra.svc.cluster.local:9092,BROKER://kafka-0.kafka.mbd-infra.svc.cluster.local:9093"
+  KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka.mbd-infra.svc.cluster.local:9092"
   KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "BROKER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
-  KAFKA_INTER_BROKER_LISTENER_NAME: "BROKER"
+  KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
   KAFKA_CONTROLLER_LISTENER_NAMES: "BROKER"
   KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
   KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
@@ -126,7 +127,7 @@ spec:
     spec:
       containers:
         - name: kafka
-          image: confluentinc/cp-kafka:7.5.0
+          image: apache/kafka:3.7.0
           ports:
             - containerPort: 9092
               name: plaintext
@@ -135,9 +136,6 @@ spec:
           envFrom:
             - configMapRef:
                 name: kafka-config
-          env:
-            - name: KAFKA_CLUSTER_ID
-              value: "MBD-Kafka-Cluster-001"
           volumeMounts:
             - name: kafka-storage
               mountPath: /var/lib/kafka/data
@@ -251,46 +249,107 @@ kubectl logs -n mbd-infra -l app=kafka
 
 ### 7. Create Kafka Topics
 
-Create a script to initialize Kafka topics:
+Create a Kubernetes Job to initialize Kafka topics. This approach is GitOps-friendly and can be managed by ArgoCD.
 
-```bash
-# infrastructure/k8s/kafka/create-topics.sh
-#!/bin/bash
+First, create the RBAC resources for the Job:
 
-# Wait for Kafka to be ready
-echo "Waiting for Kafka to be ready..."
-kubectl wait --for=condition=ready pod -l app=kafka -n mbd-infra --timeout=300s
+The RBAC manifest file `infrastructure/k8s/kafka/topic-creator-rbac.yaml` has already been created with the following content:
 
-# Create topics
-echo "Creating Kafka topics..."
-
-# Fund price updates topic
-kubectl exec -n mbd-infra kafka-0 -- kafka-topics --create \
-  --if-not-exists \
-  --bootstrap-server localhost:9092 \
-  --topic fund-price-updates \
-  --partitions 3 \
-  --replication-factor 1
-
-# Portfolio updates topic
-kubectl exec -n mbd-infra kafka-0 -- kafka-topics --create \
-  --if-not-exists \
-  --bootstrap-server localhost:9092 \
-  --topic portfolio-updates \
-  --partitions 3 \
-  --replication-factor 1
-
-echo "Kafka topics created successfully"
-
-# List topics
-kubectl exec -n mbd-infra kafka-0 -- kafka-topics --list --bootstrap-server localhost:9092
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kafka-topic-creator
+  namespace: mbd-infra
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kafka-topic-creator
+  namespace: mbd-infra
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kafka-topic-creator
+  namespace: mbd-infra
+subjects:
+  - kind: ServiceAccount
+    name: kafka-topic-creator
+    namespace: mbd-infra
+roleRef:
+  kind: Role
+  name: kafka-topic-creator
+  apiGroup: rbac.authorization.k8s.io
 ```
 
-Make the script executable and run it:
+Apply the RBAC resources:
 
 ```bash
-chmod +x infrastructure/k8s/kafka/create-topics.sh
-./infrastructure/k8s/kafka/create-topics.sh
+kubectl apply -f infrastructure/k8s/kafka/topic-creator-rbac.yaml
+```
+
+The Job manifest file `infrastructure/k8s/kafka/create-topics-job.yaml` has already been created with the following content:
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kafka-create-topics
+  namespace: mbd-infra
+spec:
+  template:
+    metadata:
+      name: kafka-create-topics
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: kafka-topic-creator
+      containers:
+        - name: kafka-topics
+          image: bitnami/kubectl:latest
+          command:
+            - /bin/bash
+            - -c
+            - |
+              # Wait for Kafka to be ready
+              echo "Waiting for Kafka to be ready..."
+              until kubectl exec -n mbd-infra kafka-0 -- sh -c "ls /opt/kafka/bin/kafka-topics.sh" > /dev/null 2>&1; do
+                echo "Kafka not ready yet, waiting..."
+                sleep 5
+              done
+              echo "Kafka is ready. Creating topics..."
+              
+              # Fund price updates topic
+              kubectl exec -n mbd-infra kafka-0 -- sh -c "/opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server localhost:9092 --topic fund-price-updates --partitions 3 --replication-factor 1"
+              
+              # Portfolio updates topic
+              kubectl exec -n mbd-infra kafka-0 -- sh -c "/opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server localhost:9092 --topic portfolio-updates --partitions 3 --replication-factor 1"
+              
+              echo "Kafka topics created successfully"
+              
+              # List topics
+              kubectl exec -n mbd-infra kafka-0 -- sh -c "/opt/kafka/bin/kafka-topics.sh --list --bootstrap-server localhost:9092"
+```
+
+**Important:** These files must be committed to your GitHub repository in the manifests repository.
+
+Apply the Job:
+
+```bash
+kubectl apply -f infrastructure/k8s/kafka/create-topics-job.yaml
+```
+
+Verify the topics were created:
+
+```bash
+kubectl logs job/kafka-create-topics -n mbd-infra
 ```
 
 ### 8. Test Kafka
@@ -300,7 +359,7 @@ chmod +x infrastructure/k8s/kafka/create-topics.sh
 kubectl port-forward -n mbd-infra kafka-0 9092:9092
 
 # In another terminal, produce a test message
-kubectl exec -n mbd-infra kafka-0 -- kafka-console-producer \
+kubectl exec -n mbd-infra kafka-0 -it -- /opt/kafka/bin/kafka-console-producer.sh \
   --bootstrap-server localhost:9092 \
   --topic fund-price-updates
 
@@ -310,7 +369,7 @@ kubectl exec -n mbd-infra kafka-0 -- kafka-console-producer \
 # Press Ctrl+C to exit
 
 # Consume the message
-kubectl exec -n mbd-infra kafka-0 -- kafka-console-consumer \
+kubectl exec -n mbd-infra kafka-0 -- /opt/kafka/bin/kafka-console-consumer.sh \
   --bootstrap-server localhost:9092 \
   --topic fund-price-updates \
   --from-beginning
