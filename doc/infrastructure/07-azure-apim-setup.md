@@ -265,12 +265,13 @@ git commit -m "Add Azure APIM Self-Hosted Gateway manifests for MBD project"
 git push origin main
 ```
 
-### 10. Configure ArgoCD Application
+### 10. Configure ArgoCD Application (After ArgoCD Installation)
 
-Create an ArgoCD application to manage APIM gateway resources:
+**Important:** ArgoCD must be installed before you can apply ArgoCD application manifests. Follow the ArgoCD setup guide in `06-argocd-setup.md` first.
+
+The ArgoCD application manifest file `infrastructure/argocd/apim-app.yaml` has already been created with the following content:
 
 ```yaml
-# infrastructure/argocd/apim-app.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -279,7 +280,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: git@github.com:your-username/mbd-manifests.git
+    repoURL: git@github.com:edwinbulter/mbd.git
     targetRevision: main
     path: infrastructure/k8s/apim
   destination:
@@ -293,7 +294,7 @@ spec:
       - CreateNamespace=true
 ```
 
-Apply the ArgoCD application:
+Apply the ArgoCD application (after ArgoCD is installed):
 
 ```bash
 kubectl apply -f infrastructure/argocd/apim-app.yaml

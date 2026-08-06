@@ -1,11 +1,12 @@
 # PostgreSQL Setup
 
-This guide explains how to deploy PostgreSQL in the mbd-infra namespace with persistent storage using manifests that will be managed by ArgoCD.
+This guide explains how to deploy PostgreSQL for the MBD project.
 
 ## Prerequisites
 
 - Kind cluster running
-- mbd-infra namespace created
+- mbd-infra namespace created (from 01-namespace-setup.md)
+- Istio installed (from 02-istio-setup.md)
 - kubectl configured to use the Kind cluster
 - Cluster admin permissions
 
@@ -217,39 +218,15 @@ git commit -m "Add PostgreSQL manifests for MBD project"
 git push origin main
 ```
 
-### 7. Configure ArgoCD Application
+### 7. Next Steps
 
-Create an ArgoCD application to manage PostgreSQL resources:
+After completing this guide, proceed to:
 
-```yaml
-# infrastructure/argocd/postgresql-app.yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: mbd-postgresql
-  namespace: argocd
-spec:
-  project: default
-  source:
-    repoURL: git@github.com:your-username/mbd-manifests.git
-    targetRevision: main
-    path: infrastructure/k8s/postgresql
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: mbd-infra
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-```
+1. **04-kafka-setup.md** - Deploy Kafka
+2. **05-keycloak-setup.md** - Deploy Keycloak
+3. **06-argocd-setup.md** - Install ArgoCD and configure GitOps
 
-Apply the ArgoCD application:
-
-```bash
-kubectl apply -f infrastructure/argocd/postgresql-app.yaml
-```
+**Note:** ArgoCD application manifests will be applied in step 6 (06-argocd-setup.md) after all infrastructure is deployed.
 
 ### 8. Verify PostgreSQL Deployment
 

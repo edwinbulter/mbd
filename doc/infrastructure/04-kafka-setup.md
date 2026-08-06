@@ -1,11 +1,13 @@
-# Kafka Setup (KRaft Mode)
+# Kafka Setup
 
-This guide explains how to deploy Apache Kafka in KRaft mode (without Zookeeper) in the mbd-infra namespace using manifests that will be managed by ArgoCD.
+This guide explains how to deploy Kafka in KRaft mode for the MBD project.
 
 ## Prerequisites
 
 - Kind cluster running
-- mbd-infra namespace created
+- mbd-infra namespace created (from 01-namespace-setup.md)
+- Istio installed (from 02-istio-setup.md)
+- PostgreSQL deployed (from 03-postgresql-setup.md)
 - kubectl configured to use the Kind cluster
 - Cluster admin permissions
 
@@ -219,39 +221,14 @@ git commit -m "Add Kafka manifests for MBD project"
 git push origin main
 ```
 
-### 7. Configure ArgoCD Application
+### 7. Next Steps
 
-Create an ArgoCD application to manage Kafka resources:
+After completing this guide, proceed to:
 
-```yaml
-# infrastructure/argocd/kafka-app.yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: mbd-kafka
-  namespace: argocd
-spec:
-  project: default
-  source:
-    repoURL: git@github.com:your-username/mbd-manifests.git
-    targetRevision: main
-    path: infrastructure/k8s/kafka
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: mbd-infra
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-```
+1. **05-keycloak-setup.md** - Deploy Keycloak
+2. **06-argocd-setup.md** - Install ArgoCD and configure GitOps
 
-Apply the ArgoCD application:
-
-```bash
-kubectl apply -f infrastructure/argocd/kafka-app.yaml
-```
+**Note:** ArgoCD application manifests will be applied in step 6 (06-argocd-setup.md) after all infrastructure is deployed.
 
 ### 8. Verify Kafka Deployment
 

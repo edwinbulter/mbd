@@ -1,11 +1,11 @@
 # Istio Setup
 
-This guide explains how to install and configure Istio for the MBD project with mTLS enabled for the mbd namespaces.
+This guide explains how to install and configure Istio for the MBD project.
 
 ## Prerequisites
 
-- Existing Kind cluster running
-- mbd and mbd-infra namespaces created and labeled
+- Kind cluster running
+- mbd and mbd-infra namespaces created (from 01-namespace-setup.md)
 - kubectl configured to use the Kind cluster
 - Cluster admin permissions
 
@@ -180,37 +180,16 @@ git commit -m "Add Istio manifests for MBD project"
 git push origin main
 ```
 
-### 8. Configure ArgoCD Application
+### 8. Next Steps
 
-The Istio manifests should be managed by the same ArgoCD application that manages the namespace resources (mbd-namespaces), or you can create a separate application:
+After completing this guide, proceed to:
 
-```yaml
-# infrastructure/argocd/istio-app.yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: mbd-istio
-  namespace: argocd
-spec:
-  project: default
-  source:
-    repoURL: git@github.com:your-username/mbd-manifests.git
-    targetRevision: main
-    path: infrastructure/k8s/istio
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: default
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-```
+1. **03-postgresql-setup.md** - Deploy PostgreSQL
+2. **04-kafka-setup.md** - Deploy Kafka
+3. **05-keycloak-setup.md** - Deploy Keycloak
+4. **06-argocd-setup.md** - Install ArgoCD and configure GitOps
 
-Apply the ArgoCD application:
-
-```bash
-kubectl apply -f infrastructure/argocd/istio-app.yaml
-```
+**Note:** ArgoCD application manifests will be applied in step 6 (06-argocd-setup.md) after all infrastructure is deployed.
 
 ### 9. Verify Istio Installation
 

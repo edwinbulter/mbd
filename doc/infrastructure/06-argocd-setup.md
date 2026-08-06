@@ -34,9 +34,9 @@ kubectl get pods -n argocd
 
 ```bash
 # Port forward to access ArgoCD UI
-kubectl port-forward svc/argocd-server -n argocd 8080:443
+kubectl port-forward svc/argocd-server -n argocd 8081:443
 
-# Access the UI at: https://localhost:8080
+# Access the UI at: https://localhost:8081
 # Initial admin password:
 argocd admin initial-password -n argocd
 ```
@@ -49,7 +49,7 @@ brew install argocd  # macOS
 # Or download from: https://github.com/argoproj/argo-cd/releases
 
 # Login
-argocd login localhost:8080 --insecure
+argocd login localhost:8081 --insecure
 
 # Update admin password (recommended)
 argocd account update-password
@@ -60,18 +60,21 @@ argocd account update-password
 #### Option A: Using SSH Keys
 
 ```bash
-# Generate SSH key for ArgoCD
-ssh-keygen -t rsa -b 4096 -C "argocd@mbd" -f /tmp/argocd-ssh-key
+# Generate SSH key for ArgoCD (saved in ~/.ssh for persistence)
+ssh-keygen -t ed25519 -f ~/.ssh/argocd-ssh-key -N ""
 
-# Add the public key to your GitHub repository
-cat /tmp/argocd-ssh-key.pub
-# Copy and add to GitHub repo Settings > Deploy Keys
+# Get public key
+cat ~/.ssh/argocd-ssh-key.pub
+```
 
-# Create ArgoCD secret for SSH
-kubectl create secret generic argocd-repo-ssh \
-  --from-file=sshPrivateKey=/tmp/argocd-ssh-key \
-  --from-file=known_hosts=/dev/null \
-  -n argocd
+Add the public key to your GitHub repository as a deploy key with write access.
+
+#### Create Kubernetes Secret
+
+```bash
+# Create secret with SSH private key
+kubectl -n argocd create secret generic argocd-repo-ssh \
+  --from-file=sshPrivateKey=~/.ssh/argocd-ssh-key
 ```
 
 #### Option B: Using Personal Access Token
@@ -88,11 +91,11 @@ kubectl create secret generic github-token \
 
 ```bash
 # Add repository (replace with your repo URL)
-argocd repo add git@github.com:your-username/mbd-manifests.git \
-  --ssh-private-key-path /tmp/argocd-ssh-key
+argocd repo add git@github.com:edwinbulter/mbd.git \
+  --ssh-private-key-path ~/.ssh/argocd-ssh-key
 
 # Or using HTTPS with token
-argocd repo add https://github.com/your-username/mbd-manifests.git \
+argocd repo add https://github.com/your-username/mbd.git \
   --username your-github-username \
   --password your-github-pat
 
@@ -135,7 +138,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: git@github.com:your-username/mbd-manifests.git
+    repoURL: git@github.com:edwinbulter/mbd.git
     targetRevision: main
     path: services
   destination:
@@ -218,7 +221,7 @@ For automatic sync on git push:
 
 ```bash
 # Get ArgoCD webhook URL
-argocd repo get git@github.com:your-username/mbd-manifests.git
+argocd repo get git@github.com:edwinbulter/mbd.git
 
 # Add webhook to GitHub repository
 # Settings > Webhooks > Add webhook
@@ -325,7 +328,7 @@ argocd app delete mbd-keycloak
 argocd app delete mbd-services
 
 # Remove repository
-argocd repo rm git@github.com:your-username/mbd-manifests.git
+argocd repo rm git@github.com:edwinbulter/mbd.git
 
 # Delete ArgoCD installation
 kubectl delete -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
@@ -360,7 +363,7 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 
 ```bash
 # Test repository connection
-argocd repo get git@github.com:your-username/mbd-manifests.git
+argocd repo get git@github.com:edwinbulter/mbd.git
 
 # Check SSH key secret
 kubectl get secret argocd-repo-ssh -n argocd
@@ -408,7 +411,7 @@ argocd app set mbd-infrastructure --auto-prune
 
 ```bash
 # Check webhook configuration
-argocd repo get git@github.com:your-username/mbd-manifests.git
+argocd repo get git@github.com:edwinbulter/mbd.git
 
 # Test webhook manually
 curl -X POST <webhook-url>

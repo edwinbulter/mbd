@@ -1,11 +1,14 @@
 # Keycloak Setup
 
-This guide explains how to deploy Keycloak in the mbd-infra namespace and configure it for SSO with role-based access control using manifests that will be managed by ArgoCD.
+This guide explains how to deploy Keycloak for the MBD project.
 
 ## Prerequisites
 
 - Kind cluster running
-- mbd-infra namespace created
+- mbd-infra namespace created (from 01-namespace-setup.md)
+- Istio installed (from 02-istio-setup.md)
+- PostgreSQL deployed (from 03-postgresql-setup.md)
+- Kafka deployed (from 04-kafka-setup.md)
 - kubectl configured to use the Kind cluster
 - Cluster admin permissions
 
@@ -363,39 +366,13 @@ git commit -m "Add Keycloak manifests for MBD project"
 git push origin main
 ```
 
-### 10. Configure ArgoCD Application
+### 10. Next Steps
 
-Create an ArgoCD application to manage Keycloak resources:
+After completing this guide, proceed to:
 
-```yaml
-# infrastructure/argocd/keycloak-app.yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: mbd-keycloak
-  namespace: argocd
-spec:
-  project: default
-  source:
-    repoURL: git@github.com:your-username/mbd-manifests.git
-    targetRevision: main
-    path: infrastructure/k8s/keycloak
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: mbd-infra
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-```
+1. **06-argocd-setup.md** - Install ArgoCD and configure GitOps
 
-Apply the ArgoCD application:
-
-```bash
-kubectl apply -f infrastructure/argocd/keycloak-app.yaml
-```
+**Note:** ArgoCD application manifests will be applied in step 6 (06-argocd-setup.md) after all infrastructure is deployed.
 
 ### 11. Verify Keycloak Deployment
 

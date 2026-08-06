@@ -1,10 +1,10 @@
 # Namespace Setup
 
-This guide explains how to set up the Kubernetes namespaces for the MBD project using manifests that will be managed by ArgoCD.
+This guide explains how to set up the Kubernetes namespaces for the MBD project.
 
 ## Prerequisites
 
-- Existing Kind cluster running
+- Kind cluster running
 - kubectl configured to use the Kind cluster
 - Cluster admin permissions
 
@@ -14,6 +14,19 @@ The MBD project uses two dedicated namespaces:
 
 - `mbd` - Application namespace for microservices and frontends
 - `mbd-infra` - Infrastructure namespace for PostgreSQL, Kafka, and Keycloak
+
+## Important: Bootstrap Order
+
+**Complete these guides in sequential order before setting up ArgoCD:**
+
+1. **01-namespace-setup.md** (this guide) - Create namespaces, resource quotas, network policies
+2. **02-istio-setup.md** - Install and configure Istio
+3. **03-postgresql-setup.md** - Deploy PostgreSQL
+4. **04-kafka-setup.md** - Deploy Kafka
+5. **05-keycloak-setup.md** - Deploy Keycloak
+6. **06-argocd-setup.md** - Install ArgoCD and configure GitOps
+
+**Do not proceed to ArgoCD setup until all infrastructure components are deployed and secrets are created.**
 
 ## Important: ArgoCD Management
 
@@ -164,39 +177,17 @@ git commit -m "Add namespace manifests for MBD project"
 git push origin main
 ```
 
-### 7. Configure ArgoCD Application
+### 7. Next Steps
 
-Create an ArgoCD application to manage these namespace resources:
+After completing this guide, proceed to:
 
-```yaml
-# infrastructure/argocd/namespaces-app.yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: mbd-namespaces
-  namespace: argocd
-spec:
-  project: default
-  source:
-    repoURL: git@github.com:your-username/mbd-manifests.git
-    targetRevision: main
-    path: infrastructure/k8s
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: default
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-```
+1. **02-istio-setup.md** - Install and configure Istio
+2. **03-postgresql-setup.md** - Deploy PostgreSQL
+3. **04-kafka-setup.md** - Deploy Kafka
+4. **05-keycloak-setup.md** - Deploy Keycloak
+5. **06-argocd-setup.md** - Install ArgoCD and configure GitOps
 
-Apply the ArgoCD application:
-
-```bash
-kubectl apply -f infrastructure/argocd/namespaces-app.yaml
-```
+**Note:** ArgoCD application manifests will be applied in step 6 (06-argocd-setup.md) after all infrastructure is deployed.
 
 ## Cleanup
 

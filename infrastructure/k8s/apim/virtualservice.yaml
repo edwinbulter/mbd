@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: apim-gateway
+  namespace: mbd
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - mbd/mbd-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /api
+      route:
+        - destination:
+            host: apim-gateway
+            port:
+              number: 80
