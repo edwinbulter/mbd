@@ -41,7 +41,7 @@ spec:
                   name: keycloak-secret
                   key: db-password
             - name: KC_HOSTNAME
-              value: keycloak.mbd-infra.svc.cluster.local
+              value: localhost
             - name: KC_HOSTNAME_STRICT
               value: "false"
             - name: KC_HOSTNAME_STRICT_HTTPS
@@ -49,7 +49,9 @@ spec:
             - name: KC_HTTP_ENABLED
               value: "true"
             - name: KC_PROXY
-              value: edge
+              value: none
+            - name: KC_HEALTH_ENABLED
+              value: "true"
           resources:
             requests:
               memory: "512Mi"

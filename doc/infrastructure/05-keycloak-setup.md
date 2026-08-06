@@ -247,7 +247,7 @@ spec:
                   name: keycloak-secret
                   key: db-password
             - name: KC_HOSTNAME
-              value: keycloak.mbd-infra.svc.cluster.local
+              value: localhost
             - name: KC_HOSTNAME_STRICT
               value: "false"
             - name: KC_HOSTNAME_STRICT_HTTPS
@@ -255,7 +255,9 @@ spec:
             - name: KC_HTTP_ENABLED
               value: "true"
             - name: KC_PROXY
-              value: edge
+              value: none
+            - name: KC_HEALTH_ENABLED
+              value: "true"
           resources:
             requests:
               memory: "512Mi"
@@ -331,7 +333,7 @@ spec:
   http:
     - match:
         - uri:
-            prefix: /auth
+            prefix: /
       route:
         - destination:
             host: keycloak
@@ -397,14 +399,16 @@ kubectl logs -n mbd-infra -l app=keycloak
 
 ```bash
 # Port forward to access Keycloak locally
-kubectl port-forward -n mbd-infra svc/keycloak 8080:8080
+kubectl port-forward -n mbd-infra svc/keycloak 8082:8080
 
-# Access the admin console at: http://localhost:8080/admin
+# Access the admin console at: http://localhost:8082/admin
 # Username: admin
 # Password: Check /tmp/keycloak-passwords.txt
 ```
 
 ### 11. Configure Keycloak Realm
+
+**Note:** This script is for initial setup only. Keycloak realm configuration is not managed by GitOps. The Keycloak admin console should be treated as the source of truth for ongoing configuration changes. For major changes, consider using Keycloak's realm export/import functionality to version control configuration.
 
 Create a script to configure Keycloak:
 
@@ -420,12 +424,12 @@ echo "Waiting for Keycloak to be ready..."
 kubectl wait --for=condition=available deployment/keycloak -n mbd-infra --timeout=300s
 
 # Port forward
-kubectl port-forward -n mbd-infra svc/keycloak 8080:8080 &
+kubectl port-forward -n mbd-infra svc/keycloak 8082:8080 &
 PF_PID=$!
 sleep 10
 
 # Login to Keycloak admin
-KEYCLOAK_TOKEN=$(curl -s -X POST "http://localhost:8080/realms/master/protocol/openid-connect/token" \
+KEYCLOAK_TOKEN=$(curl -s -X POST "http://localhost:8082/realms/master/protocol/openid-connect/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=admin" \
   -d "password=$KEYCLOAK_ADMIN_PASSWORD" \
@@ -433,7 +437,7 @@ KEYCLOAK_TOKEN=$(curl -s -X POST "http://localhost:8080/realms/master/protocol/o
   -d "client_id=admin-cli" | jq -r '.access_token')
 
 # Create MBD realm
-curl -s -X POST "http://localhost:8080/admin/realms" \
+curl -s -X POST "http://localhost:8082/admin/realms" \
   -H "Authorization: Bearer $KEYCLOAK_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -449,7 +453,7 @@ curl -s -X POST "http://localhost:8080/admin/realms" \
   }'
 
 # Create user role
-curl -s -X POST "http://localhost:8080/admin/realms/mbd/roles" \
+curl -s -X POST "http://localhost:8082/admin/realms/mbd/roles" \
   -H "Authorization: Bearer $KEYCLOAK_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -458,7 +462,7 @@ curl -s -X POST "http://localhost:8080/admin/realms/mbd/roles" \
   }'
 
 # Create employee role
-curl -s -X POST "http://localhost:8080/admin/realms/mbd/roles" \
+curl -s -X POST "http://localhost:8082/admin/realms/mbd/roles" \
   -H "Authorization: Bearer $KEYCLOAK_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -467,7 +471,7 @@ curl -s -X POST "http://localhost:8080/admin/realms/mbd/roles" \
   }'
 
 # Create confidential client for backend services
-curl -s -X POST "http://localhost:8080/admin/realms/mbd/clients" \
+curl -s -X POST "http://localhost:8082/admin/realms/mbd/clients" \
   -H "Authorization: Bearer $KEYCLOAK_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -484,7 +488,7 @@ curl -s -X POST "http://localhost:8080/admin/realms/mbd/clients" \
   }'
 
 # Create public client for frontend
-curl -s -X POST "http://localhost:8080/admin/realms/mbd/clients" \
+curl -s -X POST "http://localhost:8082/admin/realms/mbd/clients" \
   -H "Authorization: Bearer $KEYCLOAK_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -512,7 +516,7 @@ chmod +x infrastructure/k8s/keycloak/configure-realm.sh
 
 ### 12. Verify Keycloak Configuration
 
-Access the Keycloak admin console at http://localhost:8080/admin and verify:
+Access the Keycloak admin console at http://localhost:8082/admin and verify:
 - Realm "mbd" exists
 - Roles "user" and "employee" exist
 - Clients "mbd-backend" and "mbd-frontend" exist
@@ -558,8 +562,8 @@ kubectl get svc -n mbd-infra | grep keycloak
 kubectl get virtualservice keycloak -n mbd-infra
 
 # Access admin console
-kubectl port-forward -n mbd-infra svc/keycloak 8080:8080
-# Open http://localhost:8080/admin
+kubectl port-forward -n mbd-infra svc/keycloak 8082:8080
+# Open http://localhost:8082/admin
 
 # Check ArgoCD application status
 argocd app get mbd-keycloak
@@ -614,8 +618,8 @@ kubectl exec -n mbd-infra -l app=keycloak -- nc -zv keycloak-postgresql 5432
 kubectl exec -n mbd-infra -l app=keycloak -- curl -s http://localhost:8080/health/ready
 
 # Check realm exists
-kubectl port-forward -n mbd-infra svc/keycloak 8080:8080
-curl -s http://localhost:8080/realms/mbd
+kubectl port-forward -n mbd-infra svc/keycloak 8082:8080
+curl -s http://localhost:8082/realms/mbd
 
 # Check client configuration
 # Access admin console and verify clients
