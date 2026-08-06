@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kafka-pvc
+  namespace: mbd-infra
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: kafka-storage
+  resources:
+    requests:
+      storage: 5Gi

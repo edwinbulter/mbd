@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: keycloak-pvc
+  namespace: mbd-infra
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: keycloak-storage
+  resources:
+    requests:
+      storage: 2Gi
