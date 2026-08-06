@@ -145,19 +145,13 @@ spec:
               memory: "1Gi"
               cpu: "1000m"
           livenessProbe:
-            exec:
-              command:
-                - pg_isready
-                - -U
-                - $(POSTGRES_USER)
+            tcpSocket:
+              port: 5432
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
-            exec:
-              command:
-                - pg_isready
-                - -U
-                - $(POSTGRES_USER)
+            tcpSocket:
+              port: 5432
             initialDelaySeconds: 5
             periodSeconds: 5
       volumes:
@@ -250,114 +244,18 @@ kubectl logs -n mbd-infra -l app=postgresql
 ### 7. Test PostgreSQL Connection
 
 ```bash
-# Port forward to access PostgreSQL locally
-kubectl port-forward -n mbd-infra svc/postgresql 5432:5432
-
-# In another terminal, test connection
-PGPASSWORD=$(kubectl get secret postgresql-secret -n mbd-infra -o jsonpath='{.data.postgres-password}' | base64 -d)
-PGUSER=$(kubectl get secret postgresql-secret -n mbd-infra -o jsonpath='{.data.postgres-user}' | base64 -d)
-PGDATABASE=$(kubectl get secret postgresql-secret -n mbd-infra -o jsonpath='{.data.postgres-db}' | base64 -d)
-
-psql -h localhost -p 5432 -U $PGUSER -d $PGDATABASE
+# Test connection using kubectl exec
+kubectl exec -n mbd-infra postgresql-0 -it -- psql -U mbdadmin -d mbd
 ```
 
-### 8. Initialize Database Schema
+### 8. Database Schema Management
 
-Create an initialization script:
+**Note:** Database schema initialization and migrations will be handled by the Spring Boot application using Flyway. The application will automatically apply database migrations on startup based on the migration scripts in the application's resources.
 
-```sql
--- infrastructure/k8s/postgresql/init-schema.sql
--- Users table
-CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
-    keycloak_id VARCHAR(255) UNIQUE NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    first_name VARCHAR(100),
-    last_name VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Accounts table
-CREATE TABLE IF NOT EXISTS accounts (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
-    account_number VARCHAR(50) UNIQUE NOT NULL,
-    balance DECIMAL(15, 2) DEFAULT 0.00,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Funds table
-CREATE TABLE IF NOT EXISTS funds (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    isin VARCHAR(50) UNIQUE NOT NULL,
-    current_price DECIMAL(15, 4) NOT NULL,
-    currency VARCHAR(3) DEFAULT 'EUR',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Holdings table
-CREATE TABLE IF NOT EXISTS holdings (
-    id SERIAL PRIMARY KEY,
-    account_id INTEGER REFERENCES accounts(id),
-    fund_id INTEGER REFERENCES funds(id),
-    quantity DECIMAL(15, 4) NOT NULL,
-    average_price DECIMAL(15, 4) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(account_id, fund_id)
-);
-
--- Transactions table
-CREATE TABLE IF NOT EXISTS transactions (
-    id SERIAL PRIMARY KEY,
-    account_id INTEGER REFERENCES accounts(id),
-    type VARCHAR(50) NOT NULL, -- DEPOSIT, WITHDRAWAL, BUY, SELL
-    amount DECIMAL(15, 2) NOT NULL,
-    fund_id INTEGER REFERENCES funds(id),
-    quantity DECIMAL(15, 4),
-    price_per_unit DECIMAL(15, 4),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Portfolio snapshots table
-CREATE TABLE IF NOT EXISTS portfolio_snapshots (
-    id SERIAL PRIMARY KEY,
-    account_id INTEGER REFERENCES accounts(id),
-    total_value DECIMAL(15, 2) NOT NULL,
-    snapshot_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- System config table
-CREATE TABLE IF NOT EXISTS system_config (
-    id SERIAL PRIMARY KEY,
-    key VARCHAR(255) UNIQUE NOT NULL,
-    value TEXT NOT NULL,
-    description TEXT,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Insert default system config
-INSERT INTO system_config (key, value, description) VALUES
-    ('price_update_frequency_minutes', '5', 'Frequency of fund price updates in minutes'),
-    ('price_update_volatility_percent', '2', 'Volatility percentage for random price changes')
-ON CONFLICT (key) DO NOTHING;
-```
-
-Apply the schema:
-
-```bash
-# Copy the schema to the pod
-kubectl cp infrastructure/k8s/postgresql/init-schema.sql \
-  $(kubectl get pod -n mbd-infra -l app=postgresql -o jsonpath='{.items[0].metadata.name}'):/tmp/init-schema.sql \
-  -n mbd-infra
-
-# Execute the schema
-kubectl exec -n mbd-infra -l app=postgresql -- psql -U mbdadmin -d mbd -f /tmp/init-schema.sql
-```
+No manual schema initialization is required at this stage. The Spring Boot application will:
+- Automatically create the necessary tables on first startup
+- Handle schema migrations through Flyway
+- Keep the database schema in sync with the application code
 
 ## Cleanup
 

@@ -49,19 +49,13 @@ spec:
               memory: "1Gi"
               cpu: "1000m"
           livenessProbe:
-            exec:
-              command:
-                - pg_isready
-                - -U
-                - $(POSTGRES_USER)
+            tcpSocket:
+              port: 5432
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
-            exec:
-              command:
-                - pg_isready
-                - -U
-                - $(POSTGRES_USER)
+            tcpSocket:
+              port: 5432
             initialDelaySeconds: 5
             periodSeconds: 5
       volumes:
