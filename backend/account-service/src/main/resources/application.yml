@@ -3,7 +3,7 @@ spring:
     name: account-service
   datasource:
     url: jdbc:postgresql://postgresql.mbd-infra.svc.cluster.local:5432/mbd
-    username: mbd
+    username: mbdadmin
     password: ${DB_PASSWORD}
   jpa:
     hibernate:
