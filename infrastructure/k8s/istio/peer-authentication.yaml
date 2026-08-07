@@ -5,7 +5,7 @@ metadata:
   namespace: mbd
 spec:
   mtls:
-    mode: STRICT
+    mode: PERMISSIVE
 ---
 apiVersion: security.istio.io/v1beta1
 kind: PeerAuthentication
@@ -14,4 +14,4 @@ metadata:
   namespace: mbd-infra
 spec:
   mtls:
-    mode: STRICT
+    mode: PERMISSIVE
