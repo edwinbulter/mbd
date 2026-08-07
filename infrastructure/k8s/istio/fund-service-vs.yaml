@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: fund-service
+  namespace: mbd
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - mbd/mbd-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /api/funds
+      route:
+        - destination:
+            host: fund-service
+            port:
+              number: 8080

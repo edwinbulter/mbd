@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: user-service
+  namespace: mbd
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - mbd/mbd-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /api/users
+      route:
+        - destination:
+            host: user-service
+            port:
+              number: 8080

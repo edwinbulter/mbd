@@ -16,6 +16,9 @@ spec:
         - namespaceSelector:
             matchLabels:
               name: mbd-infra
+        - namespaceSelector:
+            matchLabels:
+              name: istio-system
   egress:
     - to:
         - namespaceSelector:
@@ -24,6 +27,9 @@ spec:
         - namespaceSelector:
             matchLabels:
               name: mbd-infra
+        - namespaceSelector:
+            matchLabels:
+              name: istio-system
     - to:
         - namespaceSelector: {}
       ports:
