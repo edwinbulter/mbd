@@ -8,3 +8,14 @@ spec:
   trafficPolicy:
     tls:
       mode: ISTIO_MUTUAL # Zorgt ervoor dat Istio de mTLS-tunnel correct opbouwt naar de andere namespace
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: postgresql-cross-namespace
+  namespace: mbd-infra
+spec:
+  host: postgresql.mbd-infra.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
