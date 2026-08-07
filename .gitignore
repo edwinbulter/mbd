@@ -2,6 +2,8 @@
 .gradle/
 build/
 !gradle/wrapper/gradle-wrapper.jar
+!gradle/checksums.lock
+!gradle/fileHashes.lock
 !**/src/main/**/build/
 !**/src/test/**/build/
 
