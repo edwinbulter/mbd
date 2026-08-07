@@ -1,6 +1,0 @@
-/Users/e.g.h.bulter/IdeaProjects/mbd/backend/admin-service/src/main/kotlin/com/mbd/admin/AdminServiceApplication.kt
-/Users/e.g.h.bulter/IdeaProjects/mbd/backend/admin-service/src/main/kotlin/com/mbd/admin/controller/MonitoringController.kt
-/Users/e.g.h.bulter/IdeaProjects/mbd/backend/admin-service/src/main/kotlin/com/mbd/admin/repository/SystemConfigRepository.kt
-/Users/e.g.h.bulter/IdeaProjects/mbd/backend/admin-service/src/main/kotlin/com/mbd/admin/entity/SystemConfig.kt
-/Users/e.g.h.bulter/IdeaProjects/mbd/backend/admin-service/src/main/kotlin/com/mbd/admin/controller/AdminConfigController.kt
-/Users/e.g.h.bulter/IdeaProjects/mbd/backend/admin-service/src/main/kotlin/com/mbd/admin/config/SecurityConfig.kt

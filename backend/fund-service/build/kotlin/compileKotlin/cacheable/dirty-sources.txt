@@ -1,6 +1,0 @@
-/Users/e.g.h.bulter/IdeaProjects/mbd/backend/fund-service/src/main/kotlin/com/mbd/fund/service/FundPriceProducer.kt
-/Users/e.g.h.bulter/IdeaProjects/mbd/backend/fund-service/src/main/kotlin/com/mbd/fund/entity/Fund.kt
-/Users/e.g.h.bulter/IdeaProjects/mbd/backend/fund-service/src/main/kotlin/com/mbd/fund/FundServiceApplication.kt
-/Users/e.g.h.bulter/IdeaProjects/mbd/backend/fund-service/src/main/kotlin/com/mbd/fund/controller/FundController.kt
-/Users/e.g.h.bulter/IdeaProjects/mbd/backend/fund-service/src/main/kotlin/com/mbd/fund/service/PriceUpdateScheduler.kt
-/Users/e.g.h.bulter/IdeaProjects/mbd/backend/fund-service/src/main/kotlin/com/mbd/fund/repository/FundRepository.kt

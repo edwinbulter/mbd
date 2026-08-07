@@ -1,7 +1,0 @@
-/Users/e.g.h.bulter/IdeaProjects/mbd/backend/account-service/src/main/kotlin/com/mbd/account/entity/Account.kt
-/Users/e.g.h.bulter/IdeaProjects/mbd/backend/account-service/src/main/kotlin/com/mbd/account/repository/AccountRepository.kt
-/Users/e.g.h.bulter/IdeaProjects/mbd/backend/account-service/src/main/kotlin/com/mbd/account/controller/AccountController.kt
-/Users/e.g.h.bulter/IdeaProjects/mbd/backend/account-service/src/main/kotlin/com/mbd/account/client/UserClient.kt
-/Users/e.g.h.bulter/IdeaProjects/mbd/backend/account-service/src/main/kotlin/com/mbd/account/AccountServiceApplication.kt
-/Users/e.g.h.bulter/IdeaProjects/mbd/backend/account-service/src/main/kotlin/com/mbd/account/entity/Transaction.kt
-/Users/e.g.h.bulter/IdeaProjects/mbd/backend/account-service/src/main/kotlin/com/mbd/account/repository/TransactionRepository.kt
