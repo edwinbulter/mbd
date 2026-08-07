@@ -12,24 +12,24 @@ spec:
     - from:
         - namespaceSelector:
             matchLabels:
-              name: mbd
+              kubernetes.io/metadata.name: mbd # <--- Aangepast naar het standaard K8s label
         - namespaceSelector:
             matchLabels:
-              name: mbd-infra
+              kubernetes.io/metadata.name: mbd-infra
         - namespaceSelector:
             matchLabels:
-              name: istio-system
+              kubernetes.io/metadata.name: istio-system
   egress:
     - to:
         - namespaceSelector:
             matchLabels:
-              name: mbd
+              kubernetes.io/metadata.name: mbd
         - namespaceSelector:
             matchLabels:
-              name: mbd-infra
+              kubernetes.io/metadata.name: mbd-infra
         - namespaceSelector:
             matchLabels:
-              name: istio-system
+              kubernetes.io/metadata.name: istio-system
     - to:
         - namespaceSelector: {}
       ports:
