@@ -21,7 +21,7 @@ dependencies {
     implementation("org.springframework.cloud:spring-cloud-starter-openfeign:4.0.4")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("org.flywaydb:flyway-core:9.22.0")
+    implementation("org.flywaydb:flyway-core")
     implementation("org.postgresql:postgresql")
     implementation(project(":shared"))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
