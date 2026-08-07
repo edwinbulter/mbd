@@ -172,7 +172,7 @@ metadata:
 spec:
   description: MBD Banking Application
   sourceRepos:
-    - '*'
+    - 'https://github.com/edwinbulter/mbd'
   destinations:
     - namespace: mbd
       server: https://kubernetes.default.svc
@@ -216,6 +216,8 @@ argocd app sync mbd-keycloak
 ```
 
 ### 10. Set Up GitHub Webhook (Optional)
+
+Dit gaat niet werken als je gebruik maakt van een kind cluster op je eigen PC. Maar ArgoCD kijkt automatisch elke 3 minuten uit zichzelf in de GitHub-repository of er nieuwe code staat.
 
 For automatic sync on git push:
 
@@ -353,8 +355,8 @@ argocd app get mbd-infrastructure
 argocd app get mbd-services
 
 # Check ArgoCD UI
-kubectl port-forward svc/argocd-server -n argocd 8080:443
-# Open https://localhost:8080
+kubectl port-forward svc/argocd-server -n argocd 8081:443
+# Open https://localhost:8081
 ```
 
 ## Troubleshooting
