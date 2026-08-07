@@ -12,6 +12,9 @@ spec:
     metadata:
       labels:
         app: user-service
+      annotations:
+        # wacht totdat de istio sidecar volledig is opgestart (voorkomt postgresql connection failed)
+        proxy.istio.io/config: '{ "holdApplicationUntilProxyStarts": true }'
     spec:
       containers:
         - name: user-service
