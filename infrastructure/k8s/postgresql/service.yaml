@@ -7,7 +7,11 @@ spec:
   selector:
     app: postgresql
   ports:
+    # Port name must start with 'tcp-' for Istio mTLS to work with PostgreSQL
+    # PostgreSQL uses a specific startup protocol before TLS handshake, and Istio's
+    # automatic protocol detection needs explicit TCP port naming to avoid ALPN conflicts
+    # zie: https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/
     - port: 5432
       targetPort: 5432
-      name: postgresql
+      name: tcp-postgresql
   type: ClusterIP

@@ -2,7 +2,7 @@ spring:
   application:
     name: account-service
   datasource:
-    url: jdbc:postgresql://postgresql.mbd-infra.svc.cluster.local:5432/mbd?ssl=false
+    url: jdbc:postgresql://postgresql.mbd-infra.svc.cluster.local:5432/mbd
     username: mbdadmin
     password: ${DB_PASSWORD}
   jpa:
