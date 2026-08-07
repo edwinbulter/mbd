@@ -6,23 +6,23 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(name = "accounts")
-data class Account(
+class Account(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
+    var id: Long? = null,
     
     @Column(name = "user_id", nullable = false)
-    val userId: Long,
+    var userId: Long,
     
     @Column(unique = true, nullable = false)
-    val accountNumber: String,
+    var accountNumber: String,
     
     @Column(nullable = false, precision = 19, scale = 2)
-    val balance: BigDecimal = BigDecimal.ZERO,
+    var balance: BigDecimal = BigDecimal.ZERO,
     
     @Column(name = "created_at", updatable = false)
-    val createdAt: LocalDateTime = LocalDateTime.now(),
+    var createdAt: LocalDateTime = LocalDateTime.now(),
     
     @Column(name = "updated_at")
-    val updatedAt: LocalDateTime = LocalDateTime.now()
+    var updatedAt: LocalDateTime = LocalDateTime.now()
 )

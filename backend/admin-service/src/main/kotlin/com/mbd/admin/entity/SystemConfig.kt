@@ -5,19 +5,19 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(name = "system_config")
-data class SystemConfig(
+class SystemConfig(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
+    var id: Long? = null,
     
     @Column(unique = true, nullable = false, length = 100)
-    val key: String,
+    var key: String,
     
     @Column(nullable = false, columnDefinition = "TEXT")
-    val value: String,
+    var value: String,
     
-    val description: String? = null,
+    var description: String? = null,
     
     @Column(name = "updated_at")
-    val updatedAt: LocalDateTime = LocalDateTime.now()
+    var updatedAt: LocalDateTime = LocalDateTime.now()
 )

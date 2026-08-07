@@ -387,7 +387,7 @@ Create scripts to clean up the project without affecting the Kind cluster:
 - Delete local build artifacts
 - Clear Kafka data volumes
 - Clear PostgreSQL data volumes
-- **DO NOT delete Kind cluster**
+- **DO NOT delete multi-node-cluster**
 
 **`./scripts/cleanup-db.sh`**
 - Drop all database tables
@@ -417,7 +417,7 @@ Create scripts for quick reinstallation:
 **`./scripts/reset-all.sh`**
 - Combines cleanup + full reinstallation
 - Single command to reset entire environment
-- **DO NOT touch Kind cluster**
+- **DO NOT touch multi-node-cluster**
 
 ### 9.3 Development Workflow
 - Use cleanup scripts between major changes

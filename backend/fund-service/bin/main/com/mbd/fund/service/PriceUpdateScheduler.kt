@@ -19,11 +19,9 @@ class PriceUpdateScheduler(
         val funds = fundRepository.findAll()
         funds.forEach { fund ->
             val newPrice = calculateRandomPrice(fund.currentPrice, fund.volatility)
-            val updatedFund = fund.copy(
-                currentPrice = newPrice,
-                updatedAt = java.time.LocalDateTime.now()
-            )
-            fundRepository.save(updatedFund)
+            fund.currentPrice = newPrice
+            fund.updatedAt = java.time.LocalDateTime.now()
+            fundRepository.save(fund)
             priceProducer.publishPriceUpdate(FundPriceUpdate(fund.id!!, newPrice))
         }
     }

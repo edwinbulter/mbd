@@ -17,11 +17,9 @@ class FundPriceConsumer(
     fun handlePriceUpdate(update: FundPriceUpdate) {
         val holdings = holdingRepository.findByFundId(update.fundId)
         holdings.forEach { holding ->
-            val updatedHolding = holding.copy(
-                currentValue = holding.quantity.multiply(update.newPrice),
-                updatedAt = LocalDateTime.now()
-            )
-            holdingRepository.save(updatedHolding)
+            holding.currentValue = holding.quantity.multiply(update.newPrice)
+            holding.updatedAt = LocalDateTime.now()
+            holdingRepository.save(holding)
         }
         portfolioService.publishPortfolioUpdates(holdings)
     }

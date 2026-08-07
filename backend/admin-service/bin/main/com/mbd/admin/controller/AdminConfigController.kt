@@ -34,7 +34,9 @@ class AdminConfigController(
         val volatility = configRepository.findByKey("price_update_volatility")
         
         if (frequency != null) {
-            configRepository.save(frequency.copy(value = config.updateFrequencyMinutes.toString(), updatedAt = LocalDateTime.now()))
+            frequency.value = config.updateFrequencyMinutes.toString()
+            frequency.updatedAt = LocalDateTime.now()
+            configRepository.save(frequency)
         } else {
             configRepository.save(
                 SystemConfig(
@@ -46,7 +48,9 @@ class AdminConfigController(
         }
         
         if (volatility != null) {
-            configRepository.save(volatility.copy(value = config.volatility.toString(), updatedAt = LocalDateTime.now()))
+            volatility.value = config.volatility.toString()
+            volatility.updatedAt = LocalDateTime.now()
+            configRepository.save(volatility)
         } else {
             configRepository.save(
                 SystemConfig(

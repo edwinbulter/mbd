@@ -43,15 +43,13 @@ class AccountController(
     @PostMapping("/{accountId}/deposit")
     fun deposit(@PathVariable accountId: Long, @RequestBody request: DepositDto): ResponseEntity<AccountDto> {
         val account = accountRepository.findById(accountId)
-            ?: return ResponseEntity.notFound().build()
+            .orElse(null) ?: return ResponseEntity.notFound().build()
         
         // Update balance
-        val updatedAccount = account.copy(
-            balance = account.balance.add(request.amount),
-            updatedAt = LocalDateTime.now()
-        )
+        account.balance = account.balance.add(request.amount)
+        account.updatedAt = LocalDateTime.now()
         
-        val savedAccount = accountRepository.save(updatedAccount)
+        val savedAccount = accountRepository.save(account)
         
         // Record transaction
         val transaction = Transaction(
@@ -68,11 +66,8 @@ class AccountController(
     @GetMapping("/{accountId}")
     fun getAccount(@PathVariable accountId: Long): ResponseEntity<AccountDto> {
         val account = accountRepository.findById(accountId)
-        return if (account.isPresent) {
-            ResponseEntity.ok(toDto(account.get()))
-        } else {
-            ResponseEntity.notFound().build()
-        }
+            .orElse(null) ?: return ResponseEntity.notFound().build()
+        return ResponseEntity.ok(toDto(account))
     }
     
     @GetMapping("/user/{userId}")
@@ -99,6 +94,6 @@ class AccountController(
     }
     
     private fun generateAccountNumber(): String {
-        return "MBD" + UUID.randomUUID().toString().takeUpper(10)
+        return "MBD" + UUID.randomUUID().toString().take(10).uppercase()
     }
 }

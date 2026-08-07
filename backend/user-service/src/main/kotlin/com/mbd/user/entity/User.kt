@@ -5,29 +5,29 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(name = "users")
-data class User(
+class User(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
+    var id: Long? = null,
     
     @Column(unique = true, nullable = false)
-    val keycloakId: String,
+    var keycloakId: String,
     
     @Column(unique = true, nullable = false)
-    val email: String,
+    var email: String,
     
     @Column(nullable = false)
-    val firstName: String,
+    var firstName: String,
     
     @Column(nullable = false)
-    val lastName: String,
+    var lastName: String,
     
     @Column(nullable = false)
-    val role: String,
+    var role: String,
     
     @Column(name = "created_at", updatable = false)
-    val createdAt: LocalDateTime = LocalDateTime.now(),
+    var createdAt: LocalDateTime = LocalDateTime.now(),
     
     @Column(name = "updated_at")
-    val updatedAt: LocalDateTime = LocalDateTime.now()
+    var updatedAt: LocalDateTime = LocalDateTime.now()
 )

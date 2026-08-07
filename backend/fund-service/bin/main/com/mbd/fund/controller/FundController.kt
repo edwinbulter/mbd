@@ -37,29 +37,24 @@ class FundController(
     @GetMapping("/{fundId}")
     fun getFund(@PathVariable fundId: Long): ResponseEntity<FundDto> {
         val fund = fundRepository.findById(fundId)
-        return if (fund.isPresent) {
-            ResponseEntity.ok(toDto(fund.get()))
-        } else {
-            ResponseEntity.notFound().build()
-        }
+            .orElse(null) ?: return ResponseEntity.notFound().build()
+        return ResponseEntity.ok(toDto(fund))
     }
     
     @PutMapping("/{fundId}")
     fun updateFund(@PathVariable fundId: Long, @RequestBody fundDto: FundDto): ResponseEntity<FundDto> {
         val existingFund = fundRepository.findById(fundId)
-            ?: return ResponseEntity.notFound().build()
+            .orElse(null) ?: return ResponseEntity.notFound().build()
         
-        val updatedFund = existingFund.copy(
-            name = fundDto.name,
-            isin = fundDto.isin,
-            currentPrice = fundDto.currentPrice,
-            currency = fundDto.currency,
-            volatility = fundDto.volatility,
-            updateFrequencyMinutes = fundDto.updateFrequencyMinutes,
-            updatedAt = LocalDateTime.now()
-        )
+        existingFund.name = fundDto.name
+        existingFund.isin = fundDto.isin
+        existingFund.currentPrice = fundDto.currentPrice
+        existingFund.currency = fundDto.currency
+        existingFund.volatility = fundDto.volatility
+        existingFund.updateFrequencyMinutes = fundDto.updateFrequencyMinutes
+        existingFund.updatedAt = LocalDateTime.now()
         
-        val savedFund = fundRepository.save(updatedFund)
+        val savedFund = fundRepository.save(existingFund)
         return ResponseEntity.ok(toDto(savedFund))
     }
     
@@ -75,15 +70,13 @@ class FundController(
     @PutMapping("/{fundId}/config")
     fun updateConfig(@PathVariable fundId: Long, @RequestBody config: FundConfigDto): ResponseEntity<FundDto> {
         val existingFund = fundRepository.findById(fundId)
-            ?: return ResponseEntity.notFound().build()
+            .orElse(null) ?: return ResponseEntity.notFound().build()
         
-        val updatedFund = existingFund.copy(
-            volatility = config.volatility,
-            updateFrequencyMinutes = config.updateFrequencyMinutes,
-            updatedAt = LocalDateTime.now()
-        )
+        existingFund.volatility = config.volatility
+        existingFund.updateFrequencyMinutes = config.updateFrequencyMinutes
+        existingFund.updatedAt = LocalDateTime.now()
         
-        val savedFund = fundRepository.save(updatedFund)
+        val savedFund = fundRepository.save(existingFund)
         return ResponseEntity.ok(toDto(savedFund))
     }
     

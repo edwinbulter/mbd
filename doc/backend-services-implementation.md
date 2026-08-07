@@ -527,8 +527,7 @@ Use Flyway for SQL migration scripts. Create migration files in `src/main/resour
 Add Flyway dependency to `build.gradle.kts`:
 
 ```kotlin
-implementation("org.flywaydb:flyway-core")
-implementation("org.flywaydb:flyway-database-postgresql")
+implementation("org.flywaydb:flyway-core:9.22.0")
 ```
 
 Configure Flyway in `application.yml`:
@@ -688,29 +687,55 @@ Flyway migrations will run automatically on application startup. To run migratio
 ### 8.1 Create Docker Images
 
 ```bash
-# Build each service
-cd backend/user-service && ./gradlew bootJar
-docker build -t user-service:latest .
-cd ../account-service && ./gradlew bootJar
-docker build -t account-service:latest .
-# Repeat for other services
+# Build all services from the backend root directory
+cd backend
+./gradlew bootJar
+
+# Build Docker images for each service
+docker build -t user-service:latest -f user-service/Dockerfile .
+docker build -t account-service:latest -f account-service/Dockerfile .
+docker build -t fund-service:latest -f fund-service/Dockerfile .
+docker build -t portfolio-service:latest -f portfolio-service/Dockerfile .
+docker build -t admin-service:latest -f admin-service/Dockerfile .
 ```
 
 ### 8.2 Load Images into Kind Cluster
 
 ```bash
-kind load docker-image user-service:latest --name mbd-cluster
-kind load docker-image account-service:latest --name mbd-cluster
-# Repeat for other services
+kind load docker-image user-service:latest --name multi-node-cluster
+kind load docker-image account-service:latest --name multi-node-cluster
+kind load docker-image fund-service:latest --name multi-node-cluster
+kind load docker-image portfolio-service:latest --name multi-node-cluster
+kind load docker-image admin-service:latest --name multi-node-cluster
 ```
 
 ### 8.3 Apply Kubernetes Manifests
 
 ```bash
+# Apply user-service manifests
 kubectl apply -f infrastructure/k8s/user-service/deployment.yaml
 kubectl apply -f infrastructure/k8s/user-service/service.yaml
 kubectl apply -f infrastructure/k8s/istio/user-service-vs.yaml
-# Repeat for other services
+
+# Apply account-service manifests
+kubectl apply -f infrastructure/k8s/account-service/deployment.yaml
+kubectl apply -f infrastructure/k8s/account-service/service.yaml
+kubectl apply -f infrastructure/k8s/istio/account-service-vs.yaml
+
+# Apply fund-service manifests
+kubectl apply -f infrastructure/k8s/fund-service/deployment.yaml
+kubectl apply -f infrastructure/k8s/fund-service/service.yaml
+kubectl apply -f infrastructure/k8s/istio/fund-service-vs.yaml
+
+# Apply portfolio-service manifests
+kubectl apply -f infrastructure/k8s/portfolio-service/deployment.yaml
+kubectl apply -f infrastructure/k8s/portfolio-service/service.yaml
+kubectl apply -f infrastructure/k8s/istio/portfolio-service-vs.yaml
+
+# Apply admin-service manifests
+kubectl apply -f infrastructure/k8s/admin-service/deployment.yaml
+kubectl apply -f infrastructure/k8s/admin-service/service.yaml
+kubectl apply -f infrastructure/k8s/istio/admin-service-vs.yaml
 ```
 
 ### 8.4 Create ArgoCD Applications
@@ -747,6 +772,9 @@ Create similar ArgoCD applications for account-service, fund-service, portfolio-
 # Test user service
 kubectl port-forward -n mbd svc/user-service 8080:8080
 curl -H "Authorization: Bearer <token>" http://localhost:8080/api/users/profile
+
+
+curl -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJsNVFxTHREaEJWZ203QVZmTEsxcXBtdzVaTHVkbjh0WnFWellrTUJnXzRnIn0.eyJleHAiOjE3ODYxMDkyNjMsImlhdCI6MTc4NjEwODk2MywianRpIjoiZDFhZjhhZDUtMTQ0Ni00MGVhLWJiN2EtNzEwZTg1ZTJiNWJlIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgyL3JlYWxtcy9tYmQiLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiMDBkNTRhYzMtOThiMi00M2M4LWE3MzUtZGVlNjA5NDY1Yjc0IiwidHlwIjoiQmVhcmVyIiwiYXpwIjoibWJkLWZyb250ZW5kIiwic2Vzc2lvbl9zdGF0ZSI6IjA0MjRiNjI3LTM2MjQtNDI2OS04NzM0LTY4OTFiYjZiYmI5YSIsImFjciI6IjEiLCJhbGxvd2VkLW9yaWdpbnMiOlsiaHR0cDovL2xvY2FsaG9zdDoqIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJvZmZsaW5lX2FjY2VzcyIsImRlZmF1bHQtcm9sZXMtbWJkIiwidW1hX2F1dGhvcml6YXRpb24iXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6InByb2ZpbGUgZW1haWwiLCJzaWQiOiIwNDI0YjYyNy0zNjI0LTQyNjktODczNC02ODkxYmI2YmJiOWEiLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsInByZWZlcnJlZF91c2VybmFtZSI6InRlc3R1c2VyIn0.roOTCgjJpFAhWQZvRKY8CAhLN3ApL8KnzcFjs3Rus6xbNx4YS4YEohTXz9BPcNvYaIy1hZhEixUj38tNGT-QItDLN1fvBj3sFK9eMoV-nfxC23cZ0USp7LZKTTXNOoLXiLSLY13dYCdK8zFjvW8xmtnaYTkrLfbrnGTMKR3veM47_Ryy2KOmmP1NDsNJPmH6ereoJ5jMIJ8fk8VPjhjiG6qxLns5fTv5tFcraAsL8PjE0Imb39hFkElbhvgj6mhaLRFOKmhuPFkovpY8Ssq8pU4GTAvCeKE6rG_PEKv_ql8O_QI_ug4ZK34cxoqu8URpGO3sh7x-954hb7Z-B95bJw" http://localhost:8080/api/users/profile
 
 # Test account service
 kubectl port-forward -n mbd svc/account-service 8081:8080

@@ -70,8 +70,8 @@ class UserController(
     }
     
     private fun extractKeycloakIdFromToken(authHeader: String): String {
-        // Simplified token extraction - in production, validate JWT properly with Keycloak
-        val token = authHeader.removePrefix("Bearer ")
+        // Simplified token extraction - in production, validate JWT properly
+        authHeader.removePrefix("Bearer ")
         // This is a placeholder - implement proper JWT validation
         return "test-keycloak-id"
     }
