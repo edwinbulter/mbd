@@ -147,6 +147,8 @@ Create markdown instruction files for infrastructure setup in `doc/infrastructur
 
 ## Phase 2: Backend Services Implementation
 
+For detailed implementation steps, see `backend-services-implementation.md`.
+
 ### 2.1 Project Structure (Monorepo)
 ```
 mbd/
@@ -209,6 +211,25 @@ mbd/
 - Database tables: system_config
 - Employee-only access (Keycloak role)
 - System monitoring endpoints
+
+### 2.8 Database Schema
+
+Tables: users, accounts, transactions, funds, holdings, system_config
+
+Use Flyway for SQL migration scripts with versioned migration files (V1__Create_Users_Table.sql, V2__Create_Accounts_Table.sql, etc.)
+
+### 2.9 Build and Deployment
+
+- Docker image creation for each service
+- Load images into Kind cluster
+- Apply Kubernetes manifests (Deployment, Service, VirtualService)
+- Create ArgoCD applications for GitOps management
+
+### 2.10 Testing
+
+- Service communication testing
+- Kafka integration testing
+- Istio routing verification
 
 ## Phase 3: Frontend Implementation
 
