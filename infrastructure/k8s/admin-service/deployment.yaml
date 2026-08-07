@@ -16,6 +16,7 @@ spec:
       containers:
         - name: admin-service
           image: admin-service:latest
+          imagePullPolicy: Never
           ports:
             - containerPort: 8080
           env:

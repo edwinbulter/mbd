@@ -16,6 +16,7 @@ spec:
       containers:
         - name: fund-service
           image: fund-service:latest
+          imagePullPolicy: Never
           ports:
             - containerPort: 8080
           env:
