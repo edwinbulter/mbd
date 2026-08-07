@@ -165,7 +165,104 @@ Apply the DestinationRules:
 kubectl apply -f infrastructure/k8s/istio/destination-rules.yaml
 ```
 
-### 7. Commit Istio Manifests to GitHub
+### 7. Configure API Routing with VirtualServices
+
+VirtualServices define routing rules for traffic entering through the Gateway. Each backend service will have its own VirtualService to route requests to the correct service.
+
+**Note:** VirtualServices for backend services will be created when the services are deployed. This section documents the pattern and structure.
+
+#### VirtualService Pattern
+
+For each backend service, create a VirtualService in the `infrastructure/k8s/istio/` directory. Example structure:
+
+```yaml
+# infrastructure/k8s/istio/user-service-vs.yaml
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: user-service
+  namespace: mbd
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - mbd/mbd-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /api/users
+      route:
+        - destination:
+            host: user-service
+            port:
+              number: 8080
+```
+
+#### JWT Validation at Gateway Level
+
+To validate JWT tokens at the gateway level, add a RequestAuthentication policy:
+
+```yaml
+# infrastructure/k8s/istio/jwt-authn.yaml
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: jwt-authn
+  namespace: mbd
+spec:
+  selector:
+    matchLabels:
+      app: user-service
+  jwtRules:
+    - issuer: "http://keycloak.mbd-infra.svc.cluster.local:8080/realms/mbd"
+      jwksUri: "http://keycloak.mbd-infra.svc.cluster.local:8080/realms/mbd/protocol/openid-connect/certs"
+```
+
+#### CORS Configuration
+
+For frontend access, configure CORS policies:
+
+```yaml
+# infrastructure/k8s/istio/cors-policy.yaml
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: cors-policy
+  namespace: mbd
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - mbd/mbd-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /api
+      corsPolicy:
+        allowOrigins:
+          - exact: http://localhost:3000
+          - exact: http://localhost:3001
+        allowMethods:
+          - POST
+          - GET
+          - OPTIONS
+          - PUT
+          - DELETE
+        allowHeaders:
+          - "*"
+        exposeHeaders:
+          - "*"
+        maxAge: 24h
+      route:
+        - destination:
+            host: user-service
+            port:
+              number: 8080
+```
+
+**Important:** These VirtualService files will be created when backend services are deployed. They must be committed to your GitHub repository for ArgoCD management.
+
+### 8. Commit Istio Manifests to GitHub
 
 Add all Istio manifest files to your GitHub manifests repository:
 
@@ -180,7 +277,7 @@ git commit -m "Add Istio manifests for MBD project"
 git push origin main
 ```
 
-### 8. Next Steps
+### 9. Next Steps
 
 After completing this guide, proceed to:
 
@@ -189,9 +286,9 @@ After completing this guide, proceed to:
 3. **05-keycloak-setup.md** - Deploy Keycloak
 4. **06-argocd-setup.md** - Install ArgoCD and configure GitOps
 
-**Note:** ArgoCD application manifests will be applied in step 6 (06-argocd-setup.md) after all infrastructure is deployed.
+**Note:** ArgoCD application manifests will be applied in step 6 (06-argocd-setup.md) after all infrastructure is deployed. VirtualServices for backend services will be created when services are deployed.
 
-### 9. Verify Istio Installation
+### 10. Verify Istio Installation
 
 ```bash
 # Check Istio pods

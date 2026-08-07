@@ -16,11 +16,9 @@ Kafka stream toepassing,
 
 PostgreSQL DB, 
 
-Azure APIM Self-Hosted Gateway
-
 Spring Boot microservices geschreven in Kotlin als backend die onderling via een service-mesh mTLS communiceren
 
-2 frontends die via via keycloak SSO aanloggen en vervolgens communiceren met de Azure APIM via TLS
+2 frontends die via keycloak SSO aanloggen en vervolgens communiceren met de backend services via Istio Gateway
 
 runnen in lokaal K8 kind cluster
 
@@ -51,8 +49,7 @@ Repository structure: Monorepo (all services in one repo) or multi-repo?
 
 Infrastructure Details
 
-Azure APIM Self-Hosted Gateway: Do you have an Azure subscription/instance, or should we simulate this locally?
-  I have an Azure subscription but haven't used APIM locally
+API Gateway: Use Istio Gateway for routing and traffic management (free, already installed)
 PostgreSQL: Local instance or cloud-hosted?
   Local hosted in my K8 Kind Cluster
 Kafka: Local (docker/k8s) or cloud-based?
@@ -78,7 +75,7 @@ Authentication & Authorization
 
 User roles: Regular users, bank employees (any other roles?)
   No
-SSO flow: Keycloak as identity provider, with Azure APIM as the API gateway?
+SSO flow: Keycloak as identity provider, with Istio Gateway as the API gateway?
   Yes
 
 GitOps & Deployment
@@ -115,7 +112,7 @@ This plan outlines the implementation of a complete banking application (MBD - M
 - Keycloak (local K8s deployment in dedicated namespace)
 - PostgreSQL (local K8s in dedicated namespace)
 - Kafka KRaft mode (local K8s in dedicated namespace, no Zookeeper)
-- Azure APIM Self-Hosted Gateway
+- Istio Gateway for API routing
 - ArgoCD for GitOps (namespace-scoped)
 
 ## Phase 1: Infrastructure Setup
@@ -128,7 +125,6 @@ Create markdown instruction files for infrastructure setup in `doc/infrastructur
 - `04-kafka-setup.md` - Kafka KRaft mode deployment
 - `05-keycloak-setup.md` - Keycloak deployment and realm configuration
 - `06-argocd-setup.md` - ArgoCD installation and GitHub integration
-- `07-azure-apim-setup.md` - Azure APIM Self-Hosted Gateway configuration
 
 ### 1.2 Namespace Configuration
 - Create dedicated namespace: `mbd`
@@ -147,12 +143,7 @@ Create markdown instruction files for infrastructure setup in `doc/infrastructur
 - Deploy Kafka (KRaft mode) in mbd-infra namespace
 - Deploy Keycloak in mbd-infra namespace with realm configuration
 - Configure Keycloak SSO with roles (user, employee)
-
-### 1.5 Azure APIM Setup
-- Set up Azure APIM instance
-- Configure Self-Hosted Gateway
-- Define API policies for backend services
-- Configure Keycloak OAuth2 integration
+- Configure Istio Gateway for API routing
 
 ## Phase 2: Backend Services Implementation
 
@@ -194,7 +185,7 @@ mbd/
 - REST API: create account, deposit money, get account details
 - Database tables: accounts, transactions
 - Integration with user-service for validation
-- Endpoints exposed via Azure APIM
+- Endpoints exposed via Istio Gateway
 
 ### 2.5 Fund Service
 - Spring Boot + Kotlin
@@ -283,10 +274,10 @@ mbd/
 - Keycloak Deployment
 - Persistent volume claims
 
-### 5.4 Azure APIM Gateway
-- Self-Hosted Gateway deployment
-- Configuration via ConfigMap
-- TLS certificates
+### 5.4 Istio Gateway Configuration
+- VirtualServices for routing to backend services
+- DestinationRules for mTLS policies
+- Gateway configuration for external access
 
 ## Phase 6: ArgoCD GitOps Setup
 
@@ -314,8 +305,8 @@ mbd/
 
 ### 7.2 SSO Flow
 - Frontend → Keycloak (OAuth2)
-- Frontend → Azure APIM (JWT in Authorization header)
-- Azure APIM → Backend services (forward JWT)
+- Frontend → Istio Gateway (JWT in Authorization header)
+- Istio Gateway → Backend services (forward JWT)
 - Backend services validate JWT via Keycloak
 
 ### 7.3 Role-Based Access
@@ -348,7 +339,7 @@ mbd/
 7. Admin service
 8. Customer frontend
 9. Admin frontend
-10. Azure APIM configuration
+10. Istio Gateway configuration
 11. Kubernetes manifests
 12. ArgoCD setup
 13. End-to-end testing
