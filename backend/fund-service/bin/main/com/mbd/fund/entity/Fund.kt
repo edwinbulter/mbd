@@ -23,7 +23,7 @@ class Fund(
     @Column(length = 3)
     var currency: String = "EUR",
     
-    @Column(precision = 5, scale = 4)
+    @Column
     var volatility: Double = 0.02,
     
     @Column(name = "update_frequency_minutes")

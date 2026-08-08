@@ -16,6 +16,8 @@ spring:
     enabled: true
     locations: classpath:db/migration
     baseline-on-migrate: true
+    baseline-version: 0
+    table: admin_service_flyway_history
   security:
     oauth2:
       resourceserver:

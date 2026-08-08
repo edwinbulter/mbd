@@ -16,6 +16,8 @@ spring:
     enabled: true
     locations: classpath:db/migration
     baseline-on-migrate: true
+    baseline-version: 0
+    table: account_service_flyway_history
 
 server:
   port: 8080

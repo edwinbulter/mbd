@@ -1,5 +1,5 @@
 CREATE TABLE holdings (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     account_id BIGINT NOT NULL,
     fund_id BIGINT NOT NULL,
     quantity DECIMAL(19, 4) NOT NULL,

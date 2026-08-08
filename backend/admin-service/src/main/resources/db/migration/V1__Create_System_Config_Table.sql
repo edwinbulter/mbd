@@ -1,5 +1,5 @@
 CREATE TABLE system_config (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     key VARCHAR(100) UNIQUE NOT NULL,
     value TEXT NOT NULL,
     description VARCHAR(255),

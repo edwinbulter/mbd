@@ -1,5 +1,5 @@
 CREATE TABLE accounts (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,
     account_number VARCHAR(20) UNIQUE NOT NULL,
     balance DECIMAL(19, 2) DEFAULT 0.00,
