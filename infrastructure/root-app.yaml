@@ -1,0 +1,25 @@
+# This manifest should be placed in the root of the infrastructure folder to avoid recursive management!
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mbd-root
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: git@github.com:edwinbulter/mbd.git
+    targetRevision: main
+    path: infrastructure/argocd
+    directory:
+      recurse: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

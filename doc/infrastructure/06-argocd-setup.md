@@ -103,59 +103,44 @@ argocd repo add https://github.com/your-username/mbd.git \
 argocd repo list
 ```
 
-### 6. Create ArgoCD Applications
+### 6. Create ArgoCD Applications (App-of-Apps Pattern)
 
-The individual infrastructure components have their own ArgoCD applications as defined in their respective setup guides:
+Instead of applying each application manually, we use the **App-of-Apps pattern**. A single "Root App" manages all other application manifests in the `infrastructure/argocd/` directory.
 
-- **mbd-namespaces** - Manages namespace, resource quota, and network policy manifests
-- **mbd-istio** - Manages Istio PeerAuthentication, Gateway, and DestinationRules
-- **mbd-postgresql** - Manages PostgreSQL StatefulSet, PVC, and service
-- **mbd-kafka** - Manages Kafka StatefulSet, PVC, ConfigMap, and service
-- **mbd-keycloak** - Manages Keycloak deployment, PostgreSQL, and VirtualService
-
-These applications are created by applying the manifests from the respective setup guides:
+#### Apply the Root Application
 
 ```bash
-# Apply all ArgoCD applications
+kubectl apply -f infrastructure/root-app.yaml
+```
+
+Once applied, ArgoCD will automatically detect and create all individual applications (namespaces, istio, postgresql, kafka, keycloak, cert-manager, services, and frontends).
+
+#### Individual Applications (Managed by Root App)
+
+The following applications are automatically managed:
+- **mbd-namespaces**
+- **mbd-istio**
+- **mbd-postgresql**
+- **mbd-kafka**
+- **mbd-keycloak**
+- **mbd-cert-manager-config**
+- **mbd-user-service**
+- **mbd-account-service**
+- **mbd-fund-service**
+- **mbd-portfolio-service**
+- **mbd-admin-service**
+- **mbd-customer-frontend**
+- **mbd-admin-frontend**
+
+### 7. Manual Application Management (Legacy)
+
+If you prefer to manage applications individually (not recommended with Root App):
+
+```bash
+# Apply specific apps
 kubectl apply -f infrastructure/argocd/namespaces-app.yaml
 kubectl apply -f infrastructure/argocd/istio-app.yaml
-kubectl apply -f infrastructure/argocd/postgresql-app.yaml
-kubectl apply -f infrastructure/argocd/kafka-app.yaml
-kubectl apply -f infrastructure/argocd/keycloak-app.yaml
-```
-
-### 7. Create ArgoCD Application for Services (Future)
-
-When you create the application services, create an application for them:
-
-```yaml
-# infrastructure/argocd/services-app.yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: mbd-services
-  namespace: argocd
-spec:
-  project: default
-  source:
-    repoURL: git@github.com:edwinbulter/mbd.git
-    targetRevision: main
-    path: services
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: mbd
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-```
-
-Apply the application:
-
-```bash
-kubectl apply -f infrastructure/argocd/services-app.yaml
+# ... etc
 ```
 
 ### 8. Create ArgoCD Project (Optional)
