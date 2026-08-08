@@ -1,0 +1,16 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: customer-frontend
+  namespace: mbd
+spec:
+  hosts:
+    - "customer.mbd.local"
+  gateways:
+    - mbd/mbd-gateway
+  http:
+    - route:
+        - destination:
+            host: customer-frontend
+            port:
+              number: 80

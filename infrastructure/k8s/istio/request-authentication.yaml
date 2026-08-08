@@ -1,0 +1,11 @@
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: jwt-authn
+  namespace: mbd
+spec:
+  # Apply to all pods in the namespace
+  jwtRules:
+    - issuer: "http://keycloak.mbd-infra.svc.cluster.local:8080/realms/mbd"
+      jwksUri: "http://keycloak.mbd-infra.svc.cluster.local:8080/realms/mbd/protocol/openid-connect/certs"
+      forwardOriginalToken: true

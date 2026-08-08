@@ -5,7 +5,7 @@ metadata:
   namespace: mbd-infra
 spec:
   hosts:
-    - "*"
+    - "keycloak.mbd.local"
   gateways:
     - mbd/mbd-gateway
   http:

@@ -12,7 +12,9 @@ spec:
         name: http
         protocol: HTTP
       hosts:
-        - "*"
+        - "customer.mbd.local"
+        - "admin.mbd.local"
+        - "keycloak.mbd.local"
     - port:
         number: 443
         name: https
@@ -21,4 +23,6 @@ spec:
         mode: SIMPLE
         credentialName: mbd-tls-secret
       hosts:
-        - "*"
+        - "customer.mbd.local"
+        - "admin.mbd.local"
+        - "keycloak.mbd.local"

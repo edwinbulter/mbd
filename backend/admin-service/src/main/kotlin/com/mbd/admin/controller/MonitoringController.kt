@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/admin/monitoring")
 class MonitoringController {
     @GetMapping("/system-health")
-    @PreAuthorize("hasRole('employee')")
+    @PreAuthorize("hasRole('admin')")
     fun getSystemHealth(): ResponseEntity<Map<String, String>> {
         return ResponseEntity.ok(
             mapOf(
@@ -20,7 +20,7 @@ class MonitoringController {
     }
     
     @GetMapping("/active-users")
-    @PreAuthorize("hasRole('employee')")
+    @PreAuthorize("hasRole('admin')")
     fun getActiveUsers(): ResponseEntity<List<UserDto>> {
         // This would typically query the user-service
         // For now, return empty list

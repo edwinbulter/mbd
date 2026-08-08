@@ -1,0 +1,38 @@
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: api-access-policy
+  namespace: mbd
+spec:
+  # General policy for all backend services
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            requestPrincipals: ["*"]
+      to:
+        - operation:
+            paths: ["/api/users/*", "/api/accounts/*", "/api/funds/*", "/api/portfolio/*"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: admin-service-policy
+  namespace: mbd
+spec:
+  selector:
+    matchLabels:
+      app: admin-service
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            requestPrincipals: ["*"]
+      when:
+        - key: request.auth.claims[azp]
+          values: ["admin-frontend"]
+        - key: request.auth.claims[roles]
+          values: ["admin"]
+      to:
+        - operation:
+            paths: ["/api/admin/*"]

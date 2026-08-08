@@ -36,22 +36,22 @@ curl -s -X POST "http://localhost:8082/admin/realms" \
     "bruteForceProtected": true
   }'
 
-# Create user role
+# Create customer role
 curl -s -X POST "http://localhost:8082/admin/realms/mbd/roles" \
   -H "Authorization: Bearer $KEYCLOAK_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "user",
-    "description": "Regular user role"
+    "name": "customer",
+    "description": "Regular customer role"
   }'
 
-# Create employee role
+# Create admin role
 curl -s -X POST "http://localhost:8082/admin/realms/mbd/roles" \
   -H "Authorization: Bearer $KEYCLOAK_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "employee",
-    "description": "Bank employee role"
+    "name": "admin",
+    "description": "Bank administrator role"
   }'
 
 # Create confidential client for backend services
@@ -71,18 +71,55 @@ curl -s -X POST "http://localhost:8082/admin/realms/mbd/clients" \
     "validRedirectUris": ["http://localhost:*/*"]
   }'
 
-# Create public client for frontend
+# Create customer-frontend public client
 curl -s -X POST "http://localhost:8082/admin/realms/mbd/clients" \
   -H "Authorization: Bearer $KEYCLOAK_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "clientId": "mbd-frontend",
+    "clientId": "customer-frontend",
     "enabled": true,
     "publicClient": true,
-    "redirectUris": ["http://localhost:*/*", "http://localhost:*"],
-    "webOrigins": ["http://localhost:*"],
+    "redirectUris": ["https://customer.mbd.local/*"],
+    "webOrigins": ["https://customer.mbd.local"],
     "standardFlowEnabled": true,
     "directAccessGrantsEnabled": true
+  }'
+
+# Create admin-frontend public client
+curl -s -X POST "http://localhost:8082/admin/realms/mbd/clients" \
+  -H "Authorization: Bearer $KEYCLOAK_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clientId": "admin-frontend",
+    "enabled": true,
+    "publicClient": true,
+    "redirectUris": ["https://admin.mbd.local/*"],
+    "webOrigins": ["https://admin.mbd.local"],
+    "standardFlowEnabled": true,
+    "directAccessGrantsEnabled": true
+  }'
+
+# Add realm roles mapper to all clients via client scope
+# Get the 'roles' client scope ID
+CLIENT_SCOPE_ID=$(curl -s "http://localhost:8082/admin/realms/mbd/client-scopes" \
+  -H "Authorization: Bearer $KEYCLOAK_TOKEN" | jq -r '.[] | select(.name=="roles") | .id')
+
+# Add protocol mapper for realm roles to top-level 'roles' claim
+curl -s -X POST "http://localhost:8082/admin/realms/mbd/client-scopes/$CLIENT_SCOPE_ID/protocol-mappers/models" \
+  -H "Authorization: Bearer $KEYCLOAK_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "realm roles mapper",
+    "protocol": "openid-connect",
+    "protocolMapper": "oidc-usermodel-realm-role-mapper",
+    "config": {
+      "claim.name": "roles",
+      "jsonType.label": "String",
+      "multivalued": "true",
+      "userinfo.token.claim": "true",
+      "id.token.claim": "true",
+      "access.token.claim": "true"
+    }
   }'
 
 echo "Keycloak realm configured successfully"

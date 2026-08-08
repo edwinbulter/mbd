@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: mbd-tls-cert
+  namespace: mbd
+spec:
+  secretName: mbd-tls-secret
+  issuerRef:
+    name: mbd-ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+  dnsNames:
+    - customer.mbd.local
+    - admin.mbd.local
+    - keycloak.mbd.local

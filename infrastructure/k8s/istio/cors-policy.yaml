@@ -1,0 +1,35 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: cors-policy
+  namespace: mbd
+spec:
+  hosts:
+    - "customer.mbd.local"
+    - "admin.mbd.local"
+  gateways:
+    - mbd/mbd-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /api
+      corsPolicy:
+        allowOrigins:
+          - exact: https://customer.mbd.local
+          - exact: https://admin.mbd.local
+        allowMethods:
+          - POST
+          - GET
+          - OPTIONS
+          - PUT
+          - DELETE
+        allowHeaders:
+          - "*"
+        exposeHeaders:
+          - "*"
+        maxAge: 24h
+      route:
+        - destination:
+            host: user-service # This is a placeholder, individual VS handle the actual routing
+            port:
+              number: 8080

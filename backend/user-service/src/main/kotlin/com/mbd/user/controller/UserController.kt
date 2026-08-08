@@ -70,9 +70,16 @@ class UserController(
     }
     
     private fun extractKeycloakIdFromToken(authHeader: String): String {
-        // Simplified token extraction - in production, validate JWT properly
-        authHeader.removePrefix("Bearer ")
-        // This is a placeholder - implement proper JWT validation
-        return "test-keycloak-id"
+        val token = authHeader.removePrefix("Bearer ")
+        val parts = token.split(".")
+        if (parts.size != 3) {
+            throw IllegalArgumentException("Invalid JWT token format")
+        }
+        
+        val payload = String(java.util.Base64.getUrlDecoder().decode(parts[1]))
+        val mapper = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper()
+        val node = mapper.readTree(payload)
+        
+        return node.get("sub").asText()
     }
 }

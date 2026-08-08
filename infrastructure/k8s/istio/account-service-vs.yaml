@@ -5,13 +5,27 @@ metadata:
   namespace: mbd
 spec:
   hosts:
-    - "*"
+    - "customer.mbd.local"
+    - "admin.mbd.local"
   gateways:
     - mbd/mbd-gateway
   http:
     - match:
         - uri:
             prefix: /api/accounts
+      corsPolicy:
+        allowOrigins:
+          - exact: https://customer.mbd.local
+          - exact: https://admin.mbd.local
+        allowMethods:
+          - POST
+          - GET
+          - OPTIONS
+          - PUT
+          - DELETE
+        allowHeaders:
+          - "*"
+        maxAge: 24h
       route:
         - destination:
             host: account-service

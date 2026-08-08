@@ -21,7 +21,7 @@ class SecurityConfig {
         http
             .authorizeHttpRequests { authz ->
                 authz
-                    .requestMatchers("/api/admin/**").hasRole("employee")
+                    .requestMatchers("/api/admin/**").hasRole("admin")
                     .anyRequest().authenticated()
             }
             .oauth2ResourceServer { oauth2 ->

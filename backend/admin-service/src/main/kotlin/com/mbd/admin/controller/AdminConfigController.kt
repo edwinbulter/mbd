@@ -14,7 +14,7 @@ class AdminConfigController(
     private val configRepository: SystemConfigRepository
 ) {
     @GetMapping("/price-update")
-    @PreAuthorize("hasRole('employee')")
+    @PreAuthorize("hasRole('admin')")
     fun getPriceUpdateConfig(): ResponseEntity<FundConfigDto> {
         val frequency = configRepository.findByKey("price_update_frequency_minutes")
         val volatility = configRepository.findByKey("price_update_volatility")
@@ -28,7 +28,7 @@ class AdminConfigController(
     }
     
     @PutMapping("/price-update")
-    @PreAuthorize("hasRole('employee')")
+    @PreAuthorize("hasRole('admin')")
     fun updatePriceUpdateConfig(@RequestBody config: FundConfigDto): ResponseEntity<FundConfigDto> {
         val frequency = configRepository.findByKey("price_update_frequency_minutes")
         val volatility = configRepository.findByKey("price_update_volatility")
@@ -65,7 +65,7 @@ class AdminConfigController(
     }
     
     @GetMapping
-    @PreAuthorize("hasRole('employee')")
+    @PreAuthorize("hasRole('admin')")
     fun getAllConfigs(): ResponseEntity<List<SystemConfig>> {
         return ResponseEntity.ok(configRepository.findAll())
     }
