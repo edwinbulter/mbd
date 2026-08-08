@@ -6,13 +6,14 @@ const api = axios.create({
 })
 
 api.interceptors.request.use(
-  (config) => {
-    if (keycloak.token) {
-      config.headers.Authorization = `Bearer ${keycloak.token}`
+  (config: any) => {
+    const token = keycloak.token
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
     }
     return config
   },
-  (error) => {
+  (error: any) => {
     return Promise.reject(error)
   }
 )

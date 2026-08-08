@@ -36,3 +36,34 @@ spec:
       to:
         - operation:
             paths: ["/api/admin/*"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: customer-frontend-public
+  namespace: mbd
+spec:
+  selector:
+    matchLabels:
+      app: customer-frontend
+  action: ALLOW
+  rules:
+    - to:
+        - operation:
+            paths: ["/*"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: admin-frontend-public
+  namespace: mbd
+spec:
+  selector:
+    matchLabels:
+      app: admin-frontend
+  action: ALLOW
+  rules:
+    - to:
+        - operation:
+            paths: ["/*"]
+

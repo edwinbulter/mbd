@@ -8,8 +8,8 @@ export default function Config() {
 
   useEffect(() => {
     adminApi.getPriceUpdateConfig()
-      .then(res => setConfig(res.data))
-      .catch(err => console.error(err))
+      .then((res: any) => setConfig(res.data))
+      .catch((err: any) => console.error(err))
       .finally(() => setLoading(false))
   }, [])
 

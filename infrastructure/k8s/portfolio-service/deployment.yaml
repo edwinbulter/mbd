@@ -12,6 +12,12 @@ spec:
     metadata:
       labels:
         app: portfolio-service
+      annotations:
+        proxy.istio.io/config: '{ "holdApplicationUntilProxyStarts": true }'
+        sidecar.istio.io/proxyCPU: "50m"
+        sidecar.istio.io/proxyMemory: "64Mi"
+        sidecar.istio.io/proxyCPULimit: "200m"
+        sidecar.istio.io/proxyMemoryLimit: "256Mi"
     spec:
       containers:
         - name: portfolio-service
