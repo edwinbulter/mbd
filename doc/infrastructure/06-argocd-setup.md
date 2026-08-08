@@ -73,8 +73,7 @@ Add the public key to your GitHub repository as a deploy key with write access.
 
 ```bash
 # Create secret with SSH private key
-kubectl -n argocd create secret generic argocd-repo-ssh \
-  --from-file=sshPrivateKey=~/.ssh/argocd-ssh-key
+k -n argocd create secret generic argocd-repo-ssh --from-file=sshPrivateKey=$HOME/.ssh/argocd-ssh-key
 ```
 
 #### Option B: Using Personal Access Token
@@ -91,8 +90,7 @@ kubectl create secret generic github-token \
 
 ```bash
 # Add repository (replace with your repo URL)
-argocd repo add git@github.com:edwinbulter/mbd.git \
-  --ssh-private-key-path ~/.ssh/argocd-ssh-key
+argocd repo add git@github.com:edwinbulter/mbd.git --ssh-private-key-path $HOME/.ssh/argocd-ssh-key
 
 # Or using HTTPS with token
 argocd repo add https://github.com/your-username/mbd.git \

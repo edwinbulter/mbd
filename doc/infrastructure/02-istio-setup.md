@@ -42,8 +42,11 @@ export PATH=$PWD/bin:$PATH
 # Install Istio with default profile
 istioctl install --set profile=default -y
 
-# Verify installation
-istioctl verify-install
+# Controleer of de pods (istiod en ingress) op 'Running' staan
+k get pods -n istio-system
+
+# Controleer of de services zijn aangemaakt
+k get svc -n istio-system
 ```
 
 ### 3. Configure Istio for MBD Namespaces
