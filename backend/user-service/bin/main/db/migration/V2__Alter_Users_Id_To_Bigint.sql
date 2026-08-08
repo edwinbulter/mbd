@@ -1,3 +1,0 @@
-ALTER TABLE users ALTER COLUMN id TYPE BIGINT;
-ALTER SEQUENCE users_id_seq AS BIGINT;
-ALTER TABLE users ALTER COLUMN id SET DEFAULT nextval('users_id_seq');
