@@ -9,7 +9,7 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: mbd-ca
-  namespace: mbd-infra
+  namespace: cert-manager
 spec:
   isCA: true
   commonName: mbd-ca

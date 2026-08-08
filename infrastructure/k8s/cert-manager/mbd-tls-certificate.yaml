@@ -2,7 +2,7 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: mbd-tls-cert
-  namespace: mbd
+  namespace: istio-system
 spec:
   secretName: mbd-tls-secret
   issuerRef:
