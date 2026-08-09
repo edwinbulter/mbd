@@ -36,24 +36,26 @@ class PortfolioService(
 
     @Transactional
     fun executeTrade(trade: TradeDto): HoldingDto {
-        if (trade.type != "BUY") {
-            throw IllegalArgumentException("Only BUY trades are supported in MVP")
+        if (trade.type == "BUY") {
+            return executeBuy(trade)
+        } else if (trade.type == "SELL") {
+            return executeSell(trade)
+        } else {
+            throw IllegalArgumentException("Unsupported trade type: ${trade.type}")
         }
+    }
 
-        // 1. Validate fund and get price
+    private fun executeBuy(trade: TradeDto): HoldingDto {
         val fund = fundClient.getFund(trade.fundId) ?: throw IllegalArgumentException("Fund not found")
         val totalCost = fund.currentPrice.multiply(trade.quantity)
 
-        // 2. Validate account balance and deduct
         val account = accountClient.getAccount(trade.accountId) ?: throw IllegalArgumentException("Account not found")
         if (account.balance < totalCost) {
             throw IllegalStateException("Insufficient balance")
         }
 
-        // 3. Deduct balance from account (using deposit with negative amount)
         accountClient.updateBalance(trade.accountId, DepositDto(totalCost.negate()))
 
-        // 4. Create or update holding
         var holding = holdingRepository.findByAccountIdAndFundId(trade.accountId, trade.fundId)
         if (holding == null) {
             holding = Holding(
@@ -76,6 +78,31 @@ class PortfolioService(
 
         val savedHolding = holdingRepository.save(holding)
         return toDto(savedHolding, fund.name, fund.isin)
+    }
+
+    private fun executeSell(trade: TradeDto): HoldingDto {
+        val fund = fundClient.getFund(trade.fundId) ?: throw IllegalArgumentException("Fund not found")
+        val holding = holdingRepository.findByAccountIdAndFundId(trade.accountId, trade.fundId)
+            ?: throw IllegalArgumentException("No holding found for this fund")
+
+        if (holding.quantity < trade.quantity) {
+            throw IllegalStateException("Insufficient quantity to sell. Available: ${holding.quantity}, Requested: ${trade.quantity}")
+        }
+
+        val proceeds = fund.currentPrice.multiply(trade.quantity)
+        accountClient.updateBalance(trade.accountId, DepositDto(proceeds))
+
+        val newQuantity = holding.quantity.subtract(trade.quantity)
+        if (newQuantity.compareTo(BigDecimal.ZERO) == 0) {
+            holdingRepository.delete(holding)
+            return toDto(holding, fund.name, fund.isin)
+        } else {
+            holding.quantity = newQuantity
+            holding.currentValue = newQuantity.multiply(fund.currentPrice)
+            holding.updatedAt = LocalDateTime.now()
+            val savedHolding = holdingRepository.save(holding)
+            return toDto(savedHolding, fund.name, fund.isin)
+        }
     }
     
     fun getPortfolioHistory(accountId: Long, limit: Int = 50): List<PortfolioValueSnapshotDto> {

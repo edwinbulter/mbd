@@ -13,6 +13,9 @@ export default function Dashboard() {
   const [creatingAccount, setCreatingAccount] = useState(false)
   const [showDeposit, setShowDeposit] = useState(false)
   const [depositAmount, setDepositAmount] = useState('1000')
+  const [sellHolding, setSellHolding] = useState<any>(null)
+  const [sellQuantity, setSellQuantity] = useState('1')
+  const [selling, setSelling] = useState(false)
 
   const initDashboard = async () => {
     try {
@@ -56,6 +59,26 @@ export default function Dashboard() {
       console.error('Failed to create account', error)
     } finally {
       setCreatingAccount(false)
+    }
+  }
+
+  const handleSell = async () => {
+    if (!account || !sellHolding) return
+    try {
+      setSelling(true)
+      await customerApi.sellFund({
+        accountId: account.id,
+        fundId: sellHolding.fundId,
+        quantity: parseFloat(sellQuantity),
+        price: sellHolding.currentValue / sellHolding.quantity
+      })
+      setSellHolding(null)
+      setSellQuantity('1')
+      await initDashboard()
+    } catch (error: any) {
+      console.error('Sell failed', error)
+    } finally {
+      setSelling(false)
     }
   }
 
@@ -188,12 +211,13 @@ export default function Dashboard() {
               <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase text-right">Quantity</th>
               <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase text-right">Avg Price</th>
               <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase text-right">Current Value</th>
+              <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {portfolio?.holdings?.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
+                <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                   No holdings yet. Start by buying some funds!
                 </td>
               </tr>
@@ -207,12 +231,63 @@ export default function Dashboard() {
                   <td className="px-6 py-4 text-right">{holding.quantity.toFixed(4)}</td>
                   <td className="px-6 py-4 text-right">€{holding.averagePrice.toFixed(2)}</td>
                   <td className="px-6 py-4 text-right font-bold text-blue-600">€{holding.currentValue.toFixed(2)}</td>
+                  <td className="px-6 py-4 text-right">
+                    <button
+                      onClick={() => { setSellHolding(holding); setSellQuantity(holding.quantity.toString()) }}
+                      className="bg-red-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-red-700 transition"
+                    >
+                      Sell
+                    </button>
+                  </td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
       </div>
+
+      {sellHolding && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+            <h2 className="text-2xl font-bold mb-4 text-gray-900">Sell {sellHolding.fundName || 'Fund'}</h2>
+            <div className="mb-4 space-y-1">
+              <p className="text-sm text-gray-500">Available Quantity: <span className="font-bold text-gray-900">{sellHolding.quantity.toFixed(4)}</span></p>
+              <p className="text-sm text-gray-500">Current Value: <span className="font-bold text-blue-600">€{sellHolding.currentValue.toFixed(2)}</span></p>
+              <p className="text-sm text-gray-500">Price per unit: <span className="font-bold text-gray-900">€{(sellHolding.currentValue / sellHolding.quantity).toFixed(2)}</span></p>
+            </div>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Quantity to Sell</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0.01"
+                max={sellHolding.quantity}
+                value={sellQuantity}
+                onChange={(e) => setSellQuantity(e.target.value)}
+                className="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xl font-semibold"
+              />
+              <p className="mt-2 text-sm text-gray-500">
+                Proceeds: <span className="font-bold text-green-600">€{(parseFloat(sellQuantity || '0') * (sellHolding.currentValue / sellHolding.quantity)).toFixed(2)}</span>
+              </p>
+            </div>
+            <div className="flex space-x-4">
+              <button
+                onClick={handleSell}
+                disabled={selling || parseFloat(sellQuantity) <= 0 || parseFloat(sellQuantity) > sellHolding.quantity}
+                className="flex-1 bg-red-600 text-white py-2 rounded font-semibold hover:bg-red-700 transition disabled:opacity-50"
+              >
+                {selling ? 'Processing...' : 'Confirm Sale'}
+              </button>
+              <button
+                onClick={() => setSellHolding(null)}
+                className="flex-1 bg-gray-200 text-gray-700 py-2 rounded font-semibold hover:bg-gray-300 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
