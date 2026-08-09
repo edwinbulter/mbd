@@ -2,20 +2,20 @@ import { useEffect, useState } from 'react'
 import { adminApi } from '@/services/adminApi'
 
 export default function Config() {
-  const [config, setConfig] = useState({ volatility: 0.02, updateFrequencyMinutes: 5 })
+  const [config, setConfig] = useState({ volatility: 2, updateFrequencyMinutes: 5 })
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
 
   useEffect(() => {
     adminApi.getPriceUpdateConfig()
-      .then((res: any) => setConfig(res.data))
+      .then((res: any) => setConfig({ ...res.data, volatility: res.data.volatility * 100 }))
       .catch((err: any) => console.error(err))
       .finally(() => setLoading(false))
   }, [])
 
   const handleSave = async () => {
     try {
-      await adminApi.updatePriceUpdateConfig(config)
+      await adminApi.updatePriceUpdateConfig({ ...config, volatility: config.volatility / 100 })
       setMessage('Configuration saved successfully!')
       setTimeout(() => setMessage(''), 3000)
     } catch (error) {
