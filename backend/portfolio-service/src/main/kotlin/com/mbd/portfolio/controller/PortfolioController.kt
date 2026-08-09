@@ -1,7 +1,9 @@
 package com.mbd.portfolio.controller
 
 import com.mbd.portfolio.service.PortfolioService
+import com.mbd.shared.dto.HoldingDto
 import com.mbd.shared.dto.PortfolioDto
+import com.mbd.shared.dto.TradeDto
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -14,5 +16,11 @@ class PortfolioController(
     fun getPortfolio(@PathVariable accountId: Long): ResponseEntity<PortfolioDto> {
         val portfolio = portfolioService.getPortfolio(accountId)
         return ResponseEntity.ok(portfolio)
+    }
+
+    @PostMapping("/trade")
+    fun executeTrade(@RequestBody trade: TradeDto): ResponseEntity<HoldingDto> {
+        val holding = portfolioService.executeTrade(trade)
+        return ResponseEntity.ok(holding)
     }
 }

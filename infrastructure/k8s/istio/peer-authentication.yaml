@@ -15,3 +15,15 @@ metadata:
 spec:
   mtls:
     mode: STRICT
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: keycloak-jwks
+  namespace: mbd-infra
+spec:
+  selector:
+    matchLabels:
+      app: keycloak
+  mtls:
+    mode: PERMISSIVE

@@ -1,9 +1,14 @@
 export interface HoldingDto {
+  id: number
+  accountId: number
   fundId: number
   fundName: string
+  fundIsin: string
   quantity: number
-  currentPrice: number
-  value: number
+  averagePrice: number
+  currentValue: number
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface PortfolioDto {

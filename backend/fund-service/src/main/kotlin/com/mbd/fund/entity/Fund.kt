@@ -12,13 +12,13 @@ class Fund(
     var id: Long? = null,
     
     @Column(nullable = false)
-    var name: String,
+    var name: String = "",
     
     @Column(unique = true, nullable = false, length = 12)
-    var isin: String,
+    var isin: String = "",
     
     @Column(nullable = false, precision = 19, scale = 2)
-    var currentPrice: BigDecimal,
+    var currentPrice: BigDecimal = BigDecimal.ZERO,
     
     @Column(length = 3)
     var currency: String = "EUR",

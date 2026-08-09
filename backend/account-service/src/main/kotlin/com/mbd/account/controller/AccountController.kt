@@ -55,8 +55,8 @@ class AccountController(
         val transaction = Transaction(
             accountId = accountId,
             amount = request.amount,
-            type = "DEPOSIT",
-            description = "Deposit"
+            type = if (request.amount >= BigDecimal.ZERO) "DEPOSIT" else "BUY_WITHDRAWAL",
+            description = if (request.amount >= BigDecimal.ZERO) "Deposit" else "Buy Order"
         )
         transactionRepository.save(transaction)
         

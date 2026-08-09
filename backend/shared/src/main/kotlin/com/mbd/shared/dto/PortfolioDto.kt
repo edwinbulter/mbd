@@ -9,6 +9,14 @@ data class PortfolioDto(
     val totalValue: BigDecimal
 )
 
+data class TradeDto(
+    val accountId: Long,
+    val fundId: Long,
+    val quantity: BigDecimal,
+    val price: BigDecimal,
+    val type: String // BUY or SELL
+)
+
 data class HoldingDto(
     val id: Long? = null,
     val accountId: Long,

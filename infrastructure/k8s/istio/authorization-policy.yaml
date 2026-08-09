@@ -7,12 +7,20 @@ spec:
   # General policy for all backend services
   action: ALLOW
   rules:
+    # Allow service-to-service traffic within the namespace (no JWT needed)
+    - from:
+        - source:
+            principals: ["cluster.local/ns/mbd/*"]
+      to:
+        - operation:
+            paths: ["/api/*"]
+    # Allow external requests with valid JWT
     - from:
         - source:
             requestPrincipals: ["*"]
       to:
         - operation:
-            paths: ["/api/users/*", "/api/accounts/*", "/api/funds/*", "/api/portfolio/*"]
+            paths: ["/api/users", "/api/users/*", "/api/accounts", "/api/accounts/*", "/api/funds", "/api/funds/*", "/api/portfolio", "/api/portfolio/*"]
 ---
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy

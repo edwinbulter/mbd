@@ -12,13 +12,13 @@ data class Transaction(
     val id: Long? = null,
     
     @Column(name = "account_id", nullable = false)
-    val accountId: Long,
+    val accountId: Long = 0,
     
     @Column(nullable = false, precision = 19, scale = 2)
-    val amount: BigDecimal,
+    val amount: BigDecimal = BigDecimal.ZERO,
     
     @Column(nullable = false)
-    val type: String,
+    val type: String = "",
     
     val description: String? = null,
     

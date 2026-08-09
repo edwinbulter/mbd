@@ -12,10 +12,10 @@ class Account(
     var id: Long? = null,
     
     @Column(name = "user_id", nullable = false)
-    var userId: Long,
+    var userId: Long = 0,
     
     @Column(unique = true, nullable = false)
-    var accountNumber: String,
+    var accountNumber: String = "",
     
     @Column(nullable = false, precision = 19, scale = 2)
     var balance: BigDecimal = BigDecimal.ZERO,

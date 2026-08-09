@@ -12,19 +12,19 @@ class Holding(
     var id: Long? = null,
     
     @Column(name = "account_id", nullable = false)
-    var accountId: Long,
+    var accountId: Long = 0,
     
     @Column(name = "fund_id", nullable = false)
-    var fundId: Long,
+    var fundId: Long = 0,
     
     @Column(nullable = false, precision = 19, scale = 4)
-    var quantity: BigDecimal,
+    var quantity: BigDecimal = BigDecimal.ZERO,
     
     @Column(name = "average_price", nullable = false, precision = 19, scale = 2)
-    var averagePrice: BigDecimal,
+    var averagePrice: BigDecimal = BigDecimal.ZERO,
     
     @Column(name = "current_value", nullable = false, precision = 19, scale = 2)
-    var currentValue: BigDecimal,
+    var currentValue: BigDecimal = BigDecimal.ZERO,
     
     @Column(name = "created_at", updatable = false)
     var createdAt: LocalDateTime = LocalDateTime.now(),

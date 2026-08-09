@@ -11,19 +11,19 @@ class User(
     var id: Long? = null,
     
     @Column(unique = true, nullable = false)
-    var keycloakId: String,
+    var keycloakId: String = "",
     
     @Column(unique = true, nullable = false)
-    var email: String,
+    var email: String = "",
     
     @Column(nullable = false)
-    var firstName: String,
+    var firstName: String = "",
     
     @Column(nullable = false)
-    var lastName: String,
+    var lastName: String = "",
     
     @Column(nullable = false)
-    var role: String,
+    var role: String = "",
     
     @Column(name = "created_at", updatable = false)
     var createdAt: LocalDateTime = LocalDateTime.now(),

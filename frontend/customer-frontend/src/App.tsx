@@ -2,30 +2,42 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ReactKeycloakProvider } from '@react-keycloak/web'
 import keycloak from '@/utils/keycloak'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { NavBar } from '@/components/NavBar'
 import Dashboard from '@/pages/Dashboard'
+import Register from '@/pages/Register'
+import Funds from '@/pages/Funds'
 
 function App() {
   return (
-    <ReactKeycloakProvider authClient={keycloak}>
+    <ReactKeycloakProvider
+      authClient={keycloak}
+      initOptions={{ onLoad: 'check-sso', checkLoginIframe: false, pkceMethod: 'S256' }}
+    >
       <BrowserRouter>
         <div className="min-h-screen bg-gray-100">
-          <nav className="bg-blue-600 text-white p-4 shadow-lg">
-            <div className="container mx-auto flex justify-between items-center">
-              <span className="text-xl font-bold">MBD Customer</span>
-              <button 
-                onClick={() => keycloak.logout()}
-                className="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded transition"
-              >
-                Logout
-              </button>
-            </div>
-          </nav>
+          <NavBar />
           <Routes>
             <Route
               path="/"
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <ProtectedRoute>
+                  <Register />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/funds"
+              element={
+                <ProtectedRoute>
+                  <Funds />
                 </ProtectedRoute>
               }
             />

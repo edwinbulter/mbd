@@ -6,6 +6,6 @@ metadata:
 spec:
   # Apply to all pods in the namespace
   jwtRules:
-    - issuer: "http://keycloak.mbd-infra.svc.cluster.local:8080/realms/mbd"
+    - issuer: "https://keycloak.mbd.local/realms/mbd"
       jwksUri: "http://keycloak.mbd-infra.svc.cluster.local:8080/realms/mbd/protocol/openid-connect/certs"
       forwardOriginalToken: true

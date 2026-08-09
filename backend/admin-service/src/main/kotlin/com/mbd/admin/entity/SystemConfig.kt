@@ -11,10 +11,10 @@ class SystemConfig(
     var id: Long? = null,
     
     @Column(unique = true, nullable = false, length = 100)
-    var key: String,
+    var key: String = "",
     
     @Column(nullable = false, columnDefinition = "TEXT")
-    var value: String,
+    var value: String = "",
     
     var description: String? = null,
     

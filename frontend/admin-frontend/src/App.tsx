@@ -2,30 +2,33 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ReactKeycloakProvider } from '@react-keycloak/web'
 import keycloak from '@/utils/keycloak'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { NavBar } from '@/components/NavBar'
 import Config from '@/pages/Config'
+import AdminFunds from '@/pages/AdminFunds'
 
 function App() {
   return (
-    <ReactKeycloakProvider authClient={keycloak}>
+    <ReactKeycloakProvider
+      authClient={keycloak}
+      initOptions={{ onLoad: 'check-sso', checkLoginIframe: false, pkceMethod: 'S256' }}
+    >
       <BrowserRouter>
         <div className="min-h-screen bg-gray-100">
-          <nav className="bg-red-600 text-white p-4 shadow-lg">
-            <div className="container mx-auto flex justify-between items-center">
-              <span className="text-xl font-bold">MBD Admin</span>
-              <button 
-                onClick={() => keycloak.logout()}
-                className="bg-red-700 hover:bg-red-800 px-4 py-2 rounded transition"
-              >
-                Logout
-              </button>
-            </div>
-          </nav>
+          <NavBar />
           <Routes>
             <Route
               path="/"
               element={
                 <ProtectedRoute requiredRole="admin">
                   <Config />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/funds"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminFunds />
                 </ProtectedRoute>
               }
             />

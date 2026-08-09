@@ -1,7 +1,7 @@
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
-  name: customer-frontend
+  name: z-customer-frontend
   namespace: mbd
 spec:
   hosts:

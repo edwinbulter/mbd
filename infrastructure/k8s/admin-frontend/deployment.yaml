@@ -22,7 +22,7 @@ spec:
       containers:
         - name: admin-frontend
           image: admin-frontend:latest
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
           resources:

@@ -22,7 +22,7 @@ spec:
       containers:
         - name: customer-frontend
           image: customer-frontend:latest
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
           resources:
