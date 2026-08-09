@@ -9,6 +9,7 @@ export const customerApi = {
   deposit: (accountId: number, amount: number) => 
     api.post(`/api/accounts/${accountId}/deposit`, { amount }),
   getPortfolio: (accountId: number) => api.get(`/api/portfolio/${accountId}`),
+  getPortfolioHistory: (accountId: number) => api.get(`/api/portfolio/${accountId}/history`),
   buyFund: (data: { accountId: number, fundId: number, quantity: number, price: number }) => 
     api.post('/api/portfolio/trade', { ...data, type: 'BUY' }),
 }

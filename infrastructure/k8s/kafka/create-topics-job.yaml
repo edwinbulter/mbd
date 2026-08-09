@@ -31,6 +31,9 @@ spec:
               # Portfolio updates topic
               kubectl exec -n mbd-infra kafka-0 -- sh -c "/opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server localhost:9092 --topic portfolio-updates --partitions 3 --replication-factor 1"
               
+              # Config updates topic
+              kubectl exec -n mbd-infra kafka-0 -- sh -c "/opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server localhost:9092 --topic config-updates --partitions 3 --replication-factor 1"
+              
               echo "Kafka topics created successfully"
               
               # List topics

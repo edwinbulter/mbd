@@ -25,6 +25,12 @@ spring:
           issuer-uri: https://keycloak.mbd.local/realms/mbd
           jwk-set-uri: http://keycloak.mbd-infra.svc.cluster.local:8080/realms/mbd/protocol/openid-connect/certs
 
+  kafka:
+    bootstrap-servers: kafka.mbd-infra.svc.cluster.local:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
 server:
   port: 8080
 

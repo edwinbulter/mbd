@@ -4,10 +4,13 @@ import com.mbd.portfolio.client.AccountClient
 import com.mbd.portfolio.client.FundClient
 import com.mbd.portfolio.entity.Holding
 import com.mbd.portfolio.repository.HoldingRepository
+import com.mbd.portfolio.repository.PortfolioValueSnapshotRepository
 import com.mbd.shared.dto.DepositDto
 import com.mbd.shared.dto.HoldingDto
 import com.mbd.shared.dto.PortfolioDto
+import com.mbd.shared.dto.PortfolioValueSnapshotDto
 import com.mbd.shared.dto.TradeDto
+import org.springframework.data.domain.PageRequest
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -18,7 +21,8 @@ import java.time.LocalDateTime
 class PortfolioService(
     private val holdingRepository: HoldingRepository,
     private val accountClient: AccountClient,
-    private val fundClient: FundClient
+    private val fundClient: FundClient,
+    private val snapshotRepository: PortfolioValueSnapshotRepository
 ) {
     fun getPortfolio(accountId: Long): PortfolioDto {
         val holdings = holdingRepository.findByAccountId(accountId)
@@ -74,6 +78,18 @@ class PortfolioService(
         return toDto(savedHolding, fund.name, fund.isin)
     }
     
+    fun getPortfolioHistory(accountId: Long, limit: Int = 50): List<PortfolioValueSnapshotDto> {
+        val snapshots = snapshotRepository.findByAccountIdOrderByTimestampDesc(accountId, PageRequest.of(0, limit))
+        return snapshots.reversed().map { snapshot ->
+            PortfolioValueSnapshotDto(
+                id = snapshot.id,
+                accountId = snapshot.accountId,
+                totalValue = snapshot.totalValue,
+                timestamp = snapshot.timestamp
+            )
+        }
+    }
+
     fun publishPortfolioUpdates(holdings: List<Holding>) {
         // Publish portfolio updates to Kafka topic if needed
         // This could be used for real-time updates to frontends

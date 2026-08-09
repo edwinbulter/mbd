@@ -14,15 +14,19 @@ class PriceUpdateScheduler(
     private val fundRepository: FundRepository,
     private val priceProducer: FundPriceProducer
 ) {
-    @Scheduled(fixedRate = 300000) // 5 minutes default
+    @Scheduled(fixedRate = 60000) // Check every minute
     fun updatePrices() {
+        val now = java.time.LocalDateTime.now()
         val funds = fundRepository.findAll()
         funds.forEach { fund ->
-            val newPrice = calculateRandomPrice(fund.currentPrice, fund.volatility)
-            fund.currentPrice = newPrice
-            fund.updatedAt = java.time.LocalDateTime.now()
-            fundRepository.save(fund)
-            priceProducer.publishPriceUpdate(FundPriceUpdate(fund.id!!, newPrice))
+            val nextUpdate = fund.updatedAt.plusMinutes(fund.updateFrequencyMinutes.toLong())
+            if (!nextUpdate.isAfter(now)) {
+                val newPrice = calculateRandomPrice(fund.currentPrice, fund.volatility)
+                fund.currentPrice = newPrice
+                fund.updatedAt = now
+                fundRepository.save(fund)
+                priceProducer.publishPriceUpdate(FundPriceUpdate(fund.id!!, newPrice))
+            }
         }
     }
     

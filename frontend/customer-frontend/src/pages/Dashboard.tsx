@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { customerApi } from '@/services/customerApi'
 import { PortfolioDto } from '@/types/portfolio'
+import PortfolioChart from '@/components/PortfolioChart'
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -169,6 +170,12 @@ export default function Dashboard() {
           </p>
         </div>
       </div>
+
+      {portfolio && portfolio.holdings && portfolio.holdings.length > 0 && (
+        <div className="mt-6">
+          <PortfolioChart accountId={account.id} />
+        </div>
+      )}
 
       <div className="mt-8 bg-white rounded-lg shadow-md overflow-hidden">
         <div className="p-6 border-b">

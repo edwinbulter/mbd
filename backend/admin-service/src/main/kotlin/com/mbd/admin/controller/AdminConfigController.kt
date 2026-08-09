@@ -4,6 +4,7 @@ import com.mbd.admin.entity.SystemConfig
 import com.mbd.admin.repository.SystemConfigRepository
 import com.mbd.shared.dto.FundConfigDto
 import org.springframework.http.ResponseEntity
+import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 import java.time.LocalDateTime
@@ -11,7 +12,8 @@ import java.time.LocalDateTime
 @RestController
 @RequestMapping("/api/admin/config")
 class AdminConfigController(
-    private val configRepository: SystemConfigRepository
+    private val configRepository: SystemConfigRepository,
+    private val kafkaTemplate: KafkaTemplate<String, FundConfigDto>
 ) {
     @GetMapping("/price-update")
     @PreAuthorize("hasRole('admin')")
@@ -61,6 +63,7 @@ class AdminConfigController(
             )
         }
         
+        kafkaTemplate.send("config-updates", "config", config)
         return ResponseEntity.ok(config)
     }
     

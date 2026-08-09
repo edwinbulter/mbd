@@ -13,3 +13,4 @@ spec:
     - customer.mbd.local
     - admin.mbd.local
     - keycloak.mbd.local
+    - kafbat.mbd.local

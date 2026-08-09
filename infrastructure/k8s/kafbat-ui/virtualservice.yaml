@@ -1,0 +1,31 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: kafbat-ui
+  namespace: mbd-infra
+spec:
+  hosts:
+    - "kafbat.mbd.local"
+  gateways:
+    - mbd/mbd-gateway
+  http:
+    - route:
+        - destination:
+            host: kafbat-ui.mbd-infra.svc.cluster.local
+            port:
+              number: 8080
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: kafbat-ui-public
+  namespace: mbd-infra
+spec:
+  selector:
+    matchLabels:
+      app: kafbat-ui
+  action: ALLOW
+  rules:
+    - to:
+        - operation:
+            paths: ["/*"]
