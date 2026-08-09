@@ -55,3 +55,9 @@ k port-forward -n mbd-infra kafka-0 9092:9092
 # Keycloak direct (bypassing Gateway):
 k port-forward -n mbd-infra svc/keycloak 8082:8080
 ```
+
+## Creating an admin account
+
+1. Create a normal user account through the regular registration flow (e.g., the customer frontend).
+2. Open the [Keycloak admin console](http://keycloak.mbd.local/admin), log in, and locate the newly created user. Assign the `admin` **realm role** via **Role mapping**.
+3. Log out of the MBD admin frontend and log back in with the same user, so the new role is included in the access token.

@@ -36,14 +36,9 @@ spec:
     - from:
         - source:
             requestPrincipals: ["*"]
-      when:
-        - key: request.auth.claims[azp]
-          values: ["admin-frontend"]
-        - key: request.auth.claims[roles]
-          values: ["admin"]
       to:
         - operation:
-            paths: ["/api/admin/*"]
+            paths: ["/api/admin", "/api/admin/*"]
 ---
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
