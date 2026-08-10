@@ -15,7 +15,7 @@ This demo exists to build hands-on experience with a specific tech stack:
 - **PKI with cert-manager** — a private certificate authority issues the TLS certificate for the Istio ingress gateway, so the `*.mbd.local` hostnames are served over HTTPS with a certificate that can be trusted by the browser.
 - **Keycloak for SSO and JWT authentication** — both frontends sign in through a single Keycloak realm (single sign-on), and the resulting JWT is validated at the Istio edge and inside `admin-service`.
 
-The backend services are written in **Kotlin** with **Spring Boot**, the frontends in **React + Vite + TypeScript**, and everything runs in a local **Kind** Kubernetes cluster.
+The backend services are written in **Kotlin** with **Spring Boot**, the frontends in **React + Vite + TypeScript**, and everything runs in a local **OrbStack** Kubernetes cluster (a lightweight alternative to Kind that uses native macOS virtualization for lower CPU and memory overhead).
 
 ---
 
@@ -27,17 +27,15 @@ The backend services are written in **Kotlin** with **Spring Boot**, the fronten
 
 After logging in via Keycloak and opening an investment account, the customer sees their dashboard: total portfolio value, cash balance, number of holdings, a portfolio value history chart (updates as fund prices move), and a holdings table with a Sell action per row.
 
-> **Screenshot:** place a screenshot of the customer dashboard (with holdings + chart) here.
->
-> `![Customer dashboard](docs/screenshots/customer-dashboard.png)`
+
+![Customer dashboard](doc/screenshots/customer-dashboard.png)
 
 #### Browse and buy funds
 
 The Funds page lists all available funds with their current price. The user picks a quantity and buys a fund, which debits the account balance and creates/updates a holding.
 
-> **Screenshot:** place a screenshot of the funds list with the buy modal here.
->
-> `![Buy fund](docs/screenshots/customer-buy-fund.png)`
+![Buy fund](doc/screenshots/customer-buy-fund.png)
+
 
 ### Admin frontend (`https://admin.mbd.local`)
 
@@ -47,17 +45,20 @@ The admin frontend requires the `admin` realm role (assigned via the Keycloak ad
 
 The admin can create new funds (name, ISIN, initial price, volatility) and delete existing funds. Changing the price-update config (volatility + frequency) publishes a config event to Kafka, which `fund-service` consumes and applies to all funds.
 
-> **Screenshot:** place a screenshot of the admin funds page (with the add-fund modal) here.
->
-> `![Admin funds](docs/screenshots/admin-funds.png)`
+![Admin funds](doc/screenshots/admin-funds.png)
+
 
 ### Kafbat UI (`https://kafbat.mbd.local`)
 
 A read-only Kafka UI for inspecting topics and messages — useful to see the `fund-price-updates` and `config-updates` events flowing through the system.
 
-> **Screenshot:** place a screenshot of the Kafbat UI topic view here.
->
-> `![Kafbat UI](docs/screenshots/kafbat-ui.png)`
+![Kafbat UI](doc/screenshots/kafbat-ui.png)
+
+### ArgoCD UI (`https://localhost:8081`)
+
+ArgoCD is the GitOps control plane — it watches this Git repo and continuously reconciles the Kubernetes cluster state with the manifests in `infrastructure/`. The UI shows all applications (namespaces, Istio, cert-manager, PostgreSQL, Kafka, Keycloak, Kafbat UI, and every backend/frontend service) and their sync status. When you push a change to the repo, ArgoCD automatically detects it and deploys it.
+
+![ArgoCD UI](argocd-ui.png)
 
 ---
 
@@ -229,7 +230,7 @@ PostgreSQL (holdings, accounts, transactions)
 | Service mesh | Istio (mTLS, JWT validation, authorization, ingress gateway) |
 | PKI / TLS | cert-manager (self-signed CA → leaf cert for `*.mbd.local`) |
 | GitOps | ArgoCD (app-of-apps, auto-sync, single source of truth) |
-| Cluster | Kind (local Kubernetes) |
+| Cluster | OrbStack (local Kubernetes, lightweight alternative to Kind) |
 
 ---
 
@@ -245,4 +246,5 @@ For in-depth explanations, see:
 - [Backend testing guide](backend-testing.md)
 - [Istio configuration README](infrastructure/k8s/istio/README.md)
 - [cert-manager PKI README](infrastructure/k8s/cert-manager/README.md)
-- Infrastructure setup steps: `doc/infrastructure/00-bootstrap-cluster.md` … `07-cert-manager-setup.md`
+- Cluster setup with ArgoCD: [00-bootstrap-cluster](doc/infrastructure/00-bootstrap-cluster.md)
+- Infrastructure setup steps: `doc/infrastructure/01-namespace-setup.md` … `07-cert-manager-setup.md`
