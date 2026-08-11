@@ -1,6 +1,6 @@
-# MBD (My Bank Demo) — Architecture Overview (v2)
+# MBD (My Bank Demo) — Architecture Overview
 
-This document describes the current architecture of the MBD codebase as it stands today. MBD is a demo investment-banking application built to gain experience with a specific tech stack: Spring Boot microservices in Kotlin, a service mesh with mTLS, Kafka event streaming, Keycloak SSO, cert-managed TLS, and a GitOps-driven local Kubernetes cluster. It is purely fictional and not affiliated with any real bank.
+This document describes the current architecture of the MBD codebase. MBD is a demo investment-banking application built to gain experience with a specific tech stack: Spring Boot microservices in Kotlin, a service mesh with mTLS, Kafka event streaming, Keycloak SSO, cert-managed TLS, and a GitOps-driven local Kubernetes cluster. It is purely fictional and not affiliated with any real bank.
 
 The repository is a **monorepo** with four top-level areas:
 
@@ -487,10 +487,40 @@ Fallback port-forwards (bypassing the gateway) are documented in `doc/operation-
 
 ---
 
-## 10. Where to Look Next
+## 10. Production Considerations & Future Work
+
+While MBD is a fully functional demonstration of a cloud-native investment platform, certain architectural simplifications were made for ease of local development and demonstration. In a mission-critical production environment, the following improvements would be implemented:
+
+### 10.1 Database Isolation (Database-per-Service)
+Currently, all microservices share a single PostgreSQL database instance and the same physical `mbd` database, using separate Flyway history tables to avoid collisions.
+- **Production Approach**: Each service should have its own dedicated database instance (or at least a separate logical database/schema with independent credentials). This ensures that a failure or maintenance window for one service's database doesn't impact others, and allows for independent scaling and schema evolution.
+
+### 10.2 Application-Level Security (Defense in Depth)
+Presently, only the `admin-service` implements Spring Security OAuth2/JWT validation. Other services rely on the Istio service mesh for edge authentication.
+- **Production Approach**: Every microservice should implement Spring Security. Relying solely on the service mesh is a "hard shell, soft center" approach. Application-level validation provides defense in depth, ensuring that even if the mesh is bypassed (e.g., via a compromised pod within the namespace), data remains protected by role-based access control (RBAC).
+
+### 10.3 Advanced Observability & Distributed Tracing
+MBD uses Spring Boot Actuator for basic health and metrics.
+- **Production Approach**:
+  - **Distributed Tracing**: Implement Micrometer Tracing with Jaeger or Zipkin to track requests as they traverse service boundaries (e.g., following a "Buy" order from the Gateway through the Portfolio service into Kafka and the Fund service).
+  - **Log Aggregation**: Centralize logs using an ELK (Elasticsearch, Logstash, Kibana) or PLG (Promtail, Loki, Grafana) stack for easier cross-service debugging.
+
+### 10.4 Kafka Resilience
+The current setup uses a single-node Kafka broker without complex error handling.
+- **Production Approach**:
+  - Use a multi-broker cluster with a replication factor of at least 3.
+  - Implement **Dead Letter Queues (DLQ)** to handle messages that consistently fail processing, preventing them from blocking the event stream.
+  - Enable idempotent producers and `acks=all` for guaranteed message delivery.
+
+### 10.5 Deployment Pipelines (CI/CD)
+ArgoCD handles the deployment (CD) based on Git state.
+- **Production Approach**: Implement a robust Continuous Integration (CI) pipeline (e.g., GitHub Actions or Azure DevOps) that runs the Testcontainers integration suite, performs Static Application Security Testing (SAST), and only pushes Docker images to the registry after all quality gates are passed.
+
+---
+
+## 11. Where to Look Next
 
 - Original requirements and decisions: <ref_file file="/Users/e.g.h.bulter/IdeaProjects/mbd/doc/plan-1.md" />
-- Previous architecture snapshot: <ref_file file="/Users/e.g.h.bulter/IdeaProjects/mbd/doc/architecture-1.md" />
 - Backend implementation guide: <ref_file file="/Users/e.g.h.bulter/IdeaProjects/mbd/doc/backend-services-implementation.md" />
 - Frontend implementation guide: <ref_file file="/Users/e.g.h.bulter/IdeaProjects/mbd/doc/frontend-implementation.md" />
 - Build/run operations: <ref_file file="/Users/e.g.h.bulter/IdeaProjects/mbd/doc/operation-notes.md" />

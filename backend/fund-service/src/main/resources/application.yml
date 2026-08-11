@@ -18,6 +18,18 @@ spring:
     baseline-on-migrate: true
     baseline-version: 0
     table: fund_service_flyway_history
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+
   kafka:
     bootstrap-servers: kafka.mbd-infra.svc.cluster.local:9092
     producer:

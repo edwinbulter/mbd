@@ -243,7 +243,7 @@ For in-depth explanations, see:
 - [Backend implementation guide](doc/backend-services-implementation.md)
 - [Frontend implementation guide](doc/frontend-implementation.md)
 - [Build & run operations](doc/operation-notes.md)
-- [Backend testing guide](backend-testing.md)
+- [Backend testing guide](doc/backend-testing.md)
 - [Istio configuration README](infrastructure/k8s/istio/README.md)
 - [cert-manager PKI README](infrastructure/k8s/cert-manager/README.md)
 - Cluster setup with ArgoCD: [00-bootstrap-cluster](doc/infrastructure/00-bootstrap-cluster.md)

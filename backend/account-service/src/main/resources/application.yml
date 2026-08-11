@@ -19,6 +19,17 @@ spring:
     baseline-version: 0
     table: account_service_flyway_history
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+
 server:
   port: 8080
 

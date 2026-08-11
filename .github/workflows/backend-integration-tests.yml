@@ -1,0 +1,61 @@
+name: Backend Integration Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-integration-tests.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-integration-tests.yml'
+  workflow_dispatch: {}
+
+jobs:
+  integration-tests:
+    name: Run Testcontainers integration tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('backend/**/*.gradle.kts') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Grant execute permission for gradlew
+        working-directory: backend
+        run: chmod +x gradlew
+
+      - name: Run portfolio-service integration test (Kafka + PostgreSQL via Testcontainers)
+        working-directory: backend
+        run: ./gradlew :portfolio-service:test --tests "com.mbd.portfolio.PortfolioIntegrationTest" --info
+
+      - name: Run user-service database migration test (PostgreSQL via Testcontainers)
+        working-directory: backend
+        run: ./gradlew :user-service:test --tests "com.mbd.user.DatabaseMigrationTest" --info
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            backend/portfolio-service/build/reports/tests/test
+            backend/user-service/build/reports/tests/test
+          retention-days: 7
