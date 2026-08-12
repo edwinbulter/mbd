@@ -21,6 +21,7 @@ class SecurityConfig {
         http
             .authorizeHttpRequests { authz ->
                 authz
+                    .requestMatchers("/actuator/**").permitAll()
                     .requestMatchers("/api/admin/**").hasRole("admin")
                     .anyRequest().authenticated()
             }
