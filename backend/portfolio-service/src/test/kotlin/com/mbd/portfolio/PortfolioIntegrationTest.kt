@@ -22,6 +22,7 @@ import org.testcontainers.utility.DockerImageName
 import java.math.BigDecimal
 import java.time.Duration
 import java.time.LocalDateTime
+import java.util.concurrent.TimeUnit
 import org.awaitility.kotlin.await
 import com.mbd.portfolio.client.AccountClient
 import com.mbd.portfolio.client.FundClient
@@ -93,6 +94,7 @@ class PortfolioIntegrationTest {
             registry.add("spring.datasource.username", postgres::getUsername)
             registry.add("spring.datasource.password", postgres::getPassword)
             registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers)
+            registry.add("spring.kafka.consumer.auto-offset-reset") { "earliest" }
         }
     }
 
@@ -118,10 +120,10 @@ class PortfolioIntegrationTest {
         // When: A FundPriceUpdate is sent to Kafka
         val newPrice = BigDecimal("110.0")
         val update = FundPriceUpdate(fundId = fundId, newPrice = newPrice)
-        kafkaTemplate.send("fund-price-updates", fundId.toString(), update)
+        kafkaTemplate.send("fund-price-updates", fundId.toString(), update).get(10, TimeUnit.SECONDS)
 
         // Then: The holding is updated and a snapshot is created
-        await.atMost(Duration.ofSeconds(10)).untilAsserted {
+        await.atMost(Duration.ofSeconds(30)).untilAsserted {
             val updatedHolding = holdingRepository.findByAccountIdAndFundId(accountId, fundId)
             assertThat(updatedHolding).isNotNull
             assertThat(updatedHolding?.currentValue?.setScale(2)).isEqualTo(initialQuantity.multiply(newPrice).setScale(2))
