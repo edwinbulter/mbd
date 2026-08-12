@@ -197,6 +197,29 @@ user-service  ◄──── account-service  ◄──── portfolio-service
 
 Each service runs **Flyway** with `baseline-on-migrate: true`, `baseline-version: 0`, and a **service-specific history table** so multiple services can migrate the same DB without clobbering each other's history.
 
+### 2.9 API Documentation (OpenAPI / Swagger UI)
+
+All five backend services include [springdoc-openapi](https://springdoc.org/) (`springdoc-openapi-starter-webmvc-ui:2.1.0`), which auto-generates an OpenAPI 3 specification from the existing Spring MVC annotations and serves it through Swagger UI.
+
+**Endpoints per service:**
+
+| Endpoint | Description |
+|----------|-------------|
+| `/swagger-ui.html` | Interactive Swagger UI web interface |
+| `/v3/api-docs` | Raw OpenAPI 3 JSON spec |
+
+**Access:**
+
+- **Port-forward** (recommended for local development): `kubectl port-forward svc/<service> -n mbd 8080:8080`, then open `http://localhost:8080/swagger-ui.html`.
+- **Istio gateway**: Each service's VirtualService includes routes for `/swagger-ui` and `/v3/api-docs`, and the authorization policy permits these paths without JWT.
+
+**Security:**
+
+- `admin-service` permits `/swagger-ui/**`, `/v3/api-docs/**`, and `/swagger-resources/**` in `SecurityConfig.kt` without authentication. The `/api/admin/**` endpoints remain protected with the `admin` role.
+- Other services have no Spring Security, so all endpoints including Swagger UI are open.
+
+See <ref_file file="/Users/e.g.h.bulter/IdeaProjects/mbd/doc/improvements/05-openapi.md" /> for detailed setup and future improvement plans.
+
 ---
 
 ## 3. Frontends

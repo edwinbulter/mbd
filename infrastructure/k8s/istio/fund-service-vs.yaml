@@ -31,3 +31,19 @@ spec:
             host: fund-service
             port:
               number: 8080
+    - match:
+        - uri:
+            prefix: /swagger-ui
+      route:
+        - destination:
+            host: fund-service
+            port:
+              number: 8080
+    - match:
+        - uri:
+            prefix: /v3/api-docs
+      route:
+        - destination:
+            host: fund-service
+            port:
+              number: 8080

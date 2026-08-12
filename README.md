@@ -230,6 +230,7 @@ PostgreSQL (holdings, accounts, transactions)
 | Service mesh | Istio (mTLS, JWT validation, authorization, ingress gateway) |
 | PKI / TLS | cert-manager (self-signed CA → leaf cert for `*.mbd.local`) |
 | GitOps | ArgoCD (app-of-apps, auto-sync, single source of truth) |
+| API docs | springdoc-openapi (Swagger UI at `/swagger-ui.html` per service) |
 | Cluster | OrbStack (local Kubernetes, lightweight alternative to Kind) |
 
 ---

@@ -21,6 +21,10 @@ spec:
       to:
         - operation:
             paths: ["/api/users", "/api/users/*", "/api/accounts", "/api/accounts/*", "/api/funds", "/api/funds/*", "/api/portfolio", "/api/portfolio/*"]
+    # Allow Swagger UI and OpenAPI spec access without JWT
+    - to:
+        - operation:
+            paths: ["/swagger-ui/*", "/v3/api-docs/*"]
 ---
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
