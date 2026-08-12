@@ -18,6 +18,14 @@ spring:
     baseline-on-migrate: true
     baseline-version: 0
     table: portfolio_service_flyway_history
+  kafka:
+    bootstrap-servers: kafka.mbd-infra.svc.cluster.local:9092
+    consumer:
+      group-id: portfolio-service
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
 
 management:
   endpoints:
@@ -29,15 +37,6 @@ management:
       show-details: always
       probes:
         enabled: true
-
-  kafka:
-    bootstrap-servers: kafka.mbd-infra.svc.cluster.local:9092
-    consumer:
-      group-id: portfolio-service
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "*"
 
 server:
   port: 8080
