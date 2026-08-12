@@ -6,6 +6,20 @@ The demo lets a user register, open an investment account, deposit cash, buy and
 
 ---
 
+## Index
+
+- [Purpose](#purpose)
+- [Functionality (with screenshots)](#functionality-with-screenshots)
+- [Communication flows](#communication-flows)
+  - [High-level architecture](#high-level-architecture)
+  - [Frontend → backend flow](#frontend--backend-flow)
+  - [Backend services + Kafka flow](#backend-services--kafka-flow)
+  - [Buy / sell trade flow](#buy--sell-trade-flow)
+- [Tech stack at a glance](#tech-stack-at-a-glance)
+- [Further reading](#further-reading)
+
+---
+
 ## Purpose
 
 This demo exists to build hands-on experience with a specific tech stack:
@@ -240,12 +254,14 @@ PostgreSQL (holdings, accounts, transactions)
 For in-depth explanations, see:
 
 - [Architecture overview](doc/architecture.md)
-- [Original plan and decisions](doc/plan-1.md)
-- [Backend implementation guide](doc/backend-services-implementation.md)
-- [Frontend implementation guide](doc/frontend-implementation.md)
 - [Build & run operations](doc/operation-notes.md)
 - [Backend testing guide](doc/backend-testing.md)
+- [Backend implementation guide](doc/backend-services-implementation.md)
+- [Frontend implementation guide](doc/frontend-implementation.md)
+- [Original plan and decisions](doc/plan-1.md)
 - [Istio configuration README](infrastructure/k8s/istio/README.md)
 - [cert-manager PKI README](infrastructure/k8s/cert-manager/README.md)
-- Cluster setup with ArgoCD: [00-bootstrap-cluster](doc/infrastructure/00-bootstrap-cluster.md)
-- Infrastructure setup steps: `doc/infrastructure/01-namespace-setup.md` … `07-cert-manager-setup.md`
+- [OpenAPI / Swagger UI](doc/improvements/05-openapi.md)
+- [Cluster setup with ArgoCD](doc/infrastructure/00-bootstrap-cluster.md)
+- [Infrastructure setup steps](doc/infrastructure/01-namespace-setup.md)
+

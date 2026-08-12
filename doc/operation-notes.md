@@ -1,6 +1,5 @@
 
 ## Build backend and load image
-
 Optional: Compile locally first to catch errors early
 ```shell
 cd backend
@@ -35,29 +34,38 @@ npm run build
 docker build -t admin-frontend:latest .
 ```
 
-Load the images (Kind only)
+Load the images (for Kind cluster only, not necessary for Orbstack cluster)
 ```shell
 kind load docker-image customer-frontend:latest --name mbd
 kind load docker-image admin-frontend:latest --name mbd
 ```
 
-## Accessing Applications (Orbstack)
-
-Update your `/etc/hosts` with the External IP of `istio-ingressgateway`.
-- **Keycloak**: http://keycloak.mbd.local/admin
+## Accessing Applications in Orbstack cluster
+Extend your `/etc/hosts` with `127.0.0.1 customer.mbd.local admin.mbd.local keycloak.mbd.local kafbat.mbd.local`
 - **Customer Frontend**: http://customer.mbd.local
 - **Admin Frontend**: http://admin.mbd.local
 
-## Port forwards (If not using Gateway)
-```shell
-k port-forward svc/argocd-server -n argocd 8081:443
-k port-forward -n mbd-infra kafka-0 9092:9092
-# Keycloak direct (bypassing Gateway):
-k port-forward -n mbd-infra svc/keycloak 8082:8080
-```
 
 ## Creating an admin account
-
 1. Create a normal user account through the regular registration flow (e.g., the customer frontend).
 2. Open the [Keycloak admin console](http://keycloak.mbd.local/admin), log in, and locate the newly created user. Assign the `admin` **realm role** via **Role mapping**.
 3. Log out of the MBD admin frontend and log back in with the same user, so the new role is included in the access token.
+
+
+## Swagger UI
+```shell
+kubectl port-forward svc/fund-service -n mbd 9080:8080
+# Open http://localhost:9080/swagger-ui.html
+
+# You can use this also for: portfolio-service, user-service, account-service, admin-service
+```
+
+## ArgoCD UI
+```shell
+kubectl port-forward svc/argocd-server -n argocd 8081:443
+# Open https://localhost:8081
+```
+
+## Other UIs
+- https://kafbat.mbd.local
+- https://keycloak.mbd.local
