@@ -3,6 +3,8 @@ kind: Job
 metadata:
   name: kafka-create-topics
   namespace: mbd-infra
+  annotations:
+    argocd.argoproj.io/sync-options: Replace=true
 spec:
   template:
     metadata:
