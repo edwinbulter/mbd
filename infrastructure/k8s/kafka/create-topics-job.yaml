@@ -4,7 +4,8 @@ metadata:
   name: kafka-create-topics
   namespace: mbd-infra
   annotations:
-    argocd.argoproj.io/sync-options: Replace=true
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
 spec:
   template:
     metadata:
