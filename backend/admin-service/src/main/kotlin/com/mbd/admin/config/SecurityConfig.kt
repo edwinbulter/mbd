@@ -22,7 +22,7 @@ class SecurityConfig {
             .authorizeHttpRequests { authz ->
                 authz
                     .requestMatchers("/actuator/**").permitAll()
-                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**").permitAll()
+                    .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**").permitAll()
                     .requestMatchers("/api/admin/**").hasRole("admin")
                     .anyRequest().authenticated()
             }
