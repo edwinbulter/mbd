@@ -1,5 +1,35 @@
 # cert-manager PKI for MBD
 
+Official online documentation for cert-manager can be found at [https://cert-manager.io/docs/](https://cert-manager.io/docs/).
+
+## What is a certificate?
+A digital certificate (specifically an **X.509 certificate**) is an electronic file that proves the identity of a server (like a website) and is used to secure connections via encryption (HTTPS). It acts as a digital passport and contains, among other things:
+- The server's **Public Key**.
+- The **identity** of the owner (such as DNS names: `customer.mbd.local`, etc.).
+- The **digital signature** of the authority that issued the certificate (the Issuer).
+- The **validity period** (start and end date).
+
+## How does cert-manager work?
+cert-manager is a Kubernetes "controller". It continuously monitors `Certificate` resources in the cluster. The process works as follows:
+1.  **Request:** You create a `Certificate` resource describing the domains you want a certificate for and which **Issuer** you want to use.
+2.  **Generation:** cert-manager generates a new key pair (Public and Private Key).
+3.  **Signing:** The Public Key is sent to the **Issuer** to be signed.
+4.  **Storage:** Once the certificate is returned, cert-manager stores the certificate along with the Private Key in a Kubernetes **Secret**.
+5.  **Monitoring:** cert-manager checks daily if the certificate is still valid. If it is close to expiration, the process repeats automatically (renewal).
+
+### What is an Issuer?
+An **Issuer** (or **ClusterIssuer**) is the "signer" or Certificate Authority (CA) of the certificate. It is the entity that tells cert-manager *how* and *by whom* a certificate should be signed.
+-   **Public Issuers:** For example, *Let's Encrypt*. These are used for real websites on the internet.
+-   **Internal/Self-signed Issuers:** Used for local development or internal networks.
+
+**In this demo:** Since we are working in a local environment (`.local` domains), we use a **self-signed CA structure**. We have created our own small certificate authority within the cluster that signs our certificates. This is why your browser initially shows a warning (it doesn't recognize our custom "issuer" yet).
+
+### Storage of the Private Key
+The private key is the most sensitive part of the PKI. cert-manager stores it in a Kubernetes Secret (defined by `secretName` in the `Certificate` resource).
+-   **Location:** The private key is stored as a base64-encoded string in the `tls.key` field of the Secret.
+-   **Security:** Access to this key is managed via Kubernetes **RBAC** (Role-Based Access Control). Only pods or services that explicitly have access to that specific Secret (like the Istio Ingress Gateway) can read the private key.
+-   **Decoupling:** The application (or gateway) reads the key from the Secret without the application itself needing to know how the key was generated or renewed.
+
 This folder contains the cert-manager resources that act as the Public Key Infrastructure (PKI) for the MBD project. cert-manager issues and renews the TLS certificate used by the Istio ingress gateway to serve HTTPS for all `*.mbd.local` hostnames.
 
 These manifests are deployed by the `mbd-cert-manager-config` ArgoCD application (`infrastructure/argocd/cert-manager-app.yaml`).

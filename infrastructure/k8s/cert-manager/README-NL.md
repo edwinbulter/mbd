@@ -1,5 +1,35 @@
 # cert-manager PKI voor MBD
 
+De officiële online documentatie van cert-manager is te vinden op [https://cert-manager.io/docs/](https://cert-manager.io/docs/).
+
+## Wat is een certificaat?
+Een digitaal certificaat (specifiek een **X.509 certificaat**) is een elektronisch bestand dat de identiteit van een server (zoals een website) bewijst en wordt gebruikt voor het beveiligen van verbindingen via encryptie (HTTPS). Het fungeert als een digitaal paspoort en bevat onder andere:
+- De **Public Key** van de server.
+- De **identiteit** van de eigenaar (zoals DNS-namen: `customer.mbd.local`, etc.).
+- De **digitale handtekening** van de instantie die het certificaat heeft uitgegeven (de Issuer).
+- De **geldigheidsduur** (begin- en einddatum).
+
+## Hoe werkt cert-manager?
+cert-manager is een Kubernetes "controller". Het houdt continu de `Certificate`-resources in de cluster in de gaten. Het proces werkt als volgt:
+1.  **Aanvraag:** Je maakt een `Certificate` resource aan waarin je beschrijft voor welke domeinen je een certificaat wilt en welke **Issuer** (uitgever) je wilt gebruiken.
+2.  **Generatie:** cert-manager genereert een nieuw sleutelpaar (Public en Private Key).
+3.  **Ondertekening:** De Public Key wordt naar de **Issuer** gestuurd om ondertekend te worden.
+4.  **Opslag:** Zodra het certificaat terugkomt, slaat cert-manager het certificaat samen met de Private Key op in een Kubernetes **Secret**.
+5.  **Monitoring:** cert-manager controleert dagelijks of het certificaat nog geldig is. Als het bijna verloopt, herhaalt het proces zich automatisch (vernieuwing).
+
+### Wat is een Issuer?
+Een **Issuer** (of **ClusterIssuer**) is de "ondertekenaar" of Certificate Authority (CA) van het certificaat. Het is de entiteit die cert-manager vertelt *hoe* en *door wie* een certificaat ondertekend moet worden.
+-   **Publieke Issuers:** Bijvoorbeeld *Let's Encrypt*. Deze worden gebruikt voor echte websites op het internet.
+-   **Interne/Self-signed Issuers:** Worden gebruikt voor lokale ontwikkeling of interne netwerken.
+
+**In deze demo:** Omdat we op een lokale omgeving werken (`.local` domeinen), maken we gebruik van een **self-signed CA-structuur**. We hebben onze eigen kleine certificaatautoriteit binnen de cluster gemaakt die onze certificaten ondertekent. Dit is waarom je browser in eerste instantie een waarschuwing geeft (hij kent onze eigen gemaakte "uitgever" nog niet).
+
+### Opslag van de Private Key
+De private key is het meest gevoelige onderdeel van de PKI. cert-manager slaat deze op in een Kubernetes Secret (gedefinieerd door `secretName` in de `Certificate` resource).
+-   **Locatie:** De private key wordt als een base64-gecodeerde string opgeslagen in het veld `tls.key` van het Secret.
+-   **Beveiliging:** De toegang tot deze sleutel wordt beheerd via Kubernetes **RBAC** (Role-Based Access Control). Alleen pods of services die expliciet toegang hebben tot dat specifieke Secret (zoals de Istio Ingress Gateway) kunnen de private key lezen.
+-   **Ontkoppeling:** De applicatie (of gateway) leest de sleutel uit het Secret zonder dat de applicatie zelf hoeft te weten hoe de sleutel is gegenereerd of vernieuwd.
+
 Deze map bevat de cert-manager-resources die fungeren als de Public Key Infrastructure (PKI) voor het MBD-project. cert-manager beheert en vernieuwt het TLS-certificaat dat door de Istio ingress-gateway wordt gebruikt om HTTPS te serveren voor alle `*.mbd.local`-hostnamen.
 
 Deze manifests worden uitgerold door de `mbd-cert-manager-config` ArgoCD-applicatie (`infrastructure/argocd/cert-manager-app.yaml`).
