@@ -1,5 +1,9 @@
 # Istio-configuratie voor MBD
 
+De officiële online documentatie van Istio is te vinden op [https://istio.io/latest/docs/](https://istio.io/latest/docs/).
+-   **API Gateway:** [Istio Gateway documentatie](https://istio.io/latest/docs/tasks/traffic-management/ingress/)
+-   **Service Mesh:** [Wat is Istio?](https://istio.io/latest/docs/concepts/what-is-istio/)
+
 Deze map bevat alle Istio-resources voor het MBD-project. Istio wordt hier in twee rollen gebruikt:
 
 1. **API Gateway** — een enkel TLS-terminerend ingress-punt dat extern browserverkeer op basis van hostnaam en URL-pad naar de juiste frontend- of backendservice routeert, en Keycloak-JWT's aan de edge valideert.

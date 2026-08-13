@@ -1,5 +1,9 @@
 # Istio Configuration for MBD
 
+Official online documentation for Istio can be found at [https://istio.io/latest/docs/](https://istio.io/latest/docs/).
+-   **API Gateway:** [Istio Gateway documentation](https://istio.io/latest/docs/tasks/traffic-management/ingress/)
+-   **Service Mesh:** [What is Istio?](https://istio.io/latest/docs/concepts/what-is-istio/)
+
 This folder contains all Istio resources for the MBD project. Istio is used here in two roles:
 
 1. **API Gateway** — a single TLS-terminating ingress point that routes external browser traffic by hostname and URL path to the right frontend or backend service, and validates Keycloak JWTs at the edge.
