@@ -69,3 +69,10 @@ kubectl port-forward svc/argocd-server -n argocd 8081:443
 ## Other UIs
 - https://kafbat.mbd.local
 - https://keycloak.mbd.local
+
+
+## Run unit tests
+```shell
+cd backend
+./gradlew test --tests "com.mbd.portfolio.service.*" --tests "com.mbd.fund.*" --tests "com.mbd.account.controller.*" --tests "com.mbd.user.controller.UserControllerTest" --tests "com.mbd.admin.controller.*" --no-daemon
+```
