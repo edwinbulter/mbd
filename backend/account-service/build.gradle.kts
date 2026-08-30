@@ -6,6 +6,7 @@ plugins {
     kotlin("jvm") version "1.9.20"
     kotlin("plugin.spring") version "1.9.20"
     kotlin("plugin.jpa") version "1.9.20"
+    id("org.cyclonedx.bom") version "1.8.2"
 }
 
 group = "com.mbd"
@@ -47,4 +48,15 @@ tasks.withType<KotlinCompile> {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+tasks.cyclonedxBom {
+    setIncludeConfigs(listOf("runtimeClasspath"))
+    setSchemaVersion("1.5")
+    setDestination(file("build/reports"))
+    setOutputName("bom")
+    setOutputFormat("json")
+    setIncludeBomSerialNumber(true)
+    setIncludeLicenseText(false)
+    setComponentVersion(version.toString())
 }
