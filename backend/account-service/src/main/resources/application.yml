@@ -23,10 +23,10 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,prometheus
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized
       probes:
         enabled: true
 
@@ -42,4 +42,5 @@ server:
 
 logging:
   level:
-    com.mbd: DEBUG
+    com.mbd: INFO
+    root: WARN

@@ -45,21 +45,32 @@ class AccountControllerTest {
     }
 
     @Test
-    fun `createAccount invalid user returns badRequest`() {
+    fun `createAccount invalid user throws unauthorized`() {
         whenever(userClient.getUserProfile("Bearer token")).thenReturn(null)
 
-        val result = controller.createAccount(CreateAccountDto(userId = 1), "Bearer token")
+        assertThrows(org.springframework.web.server.ResponseStatusException::class.java) {
+            controller.createAccount(CreateAccountDto(userId = 1), "Bearer token")
+        }
+        verify(accountRepository, never()).save(any())
+    }
 
-        assertEquals(400, result.statusCode.value())
+    @Test
+    fun `createAccount mismatched userId throws forbidden`() {
+        whenever(userClient.getUserProfile("Bearer token")).thenReturn(user)
+
+        assertThrows(org.springframework.web.server.ResponseStatusException::class.java) {
+            controller.createAccount(CreateAccountDto(userId = 999), "Bearer token")
+        }
         verify(accountRepository, never()).save(any())
     }
 
     @Test
     fun `deposit positive amount records deposit transaction`() {
+        whenever(userClient.getUserProfile("Bearer token")).thenReturn(user)
         whenever(accountRepository.findById(1)).thenReturn(Optional.of(account))
         whenever(accountRepository.save(any<Account>())).thenAnswer { it.arguments[0] }
 
-        val result = controller.deposit(1, DepositDto(BigDecimal("500.00")))
+        val result = controller.deposit(1, DepositDto(BigDecimal("500.00")), "Bearer token")
 
         assertEquals(200, result.statusCode.value())
         assertEquals(BigDecimal("1500.00"), result.body!!.balance)
@@ -71,55 +82,77 @@ class AccountControllerTest {
     }
 
     @Test
-    fun `deposit negative amount records buy withdrawal transaction`() {
+    fun `deposit negative amount throws bad request`() {
+        whenever(userClient.getUserProfile("Bearer token")).thenReturn(user)
         whenever(accountRepository.findById(1)).thenReturn(Optional.of(account))
-        whenever(accountRepository.save(any<Account>())).thenAnswer { it.arguments[0] }
 
-        val result = controller.deposit(1, DepositDto(BigDecimal("-300.00")))
-
-        assertEquals(200, result.statusCode.value())
-        assertEquals(BigDecimal("700.00"), result.body!!.balance)
-
-        val txCaptor = argumentCaptor<Transaction>()
-        verify(transactionRepository).save(txCaptor.capture())
-        assertEquals("BUY_WITHDRAWAL", txCaptor.firstValue.type)
-        assertEquals("Buy Order", txCaptor.firstValue.description)
+        assertThrows(org.springframework.web.server.ResponseStatusException::class.java) {
+            controller.deposit(1, DepositDto(BigDecimal("-300.00")), "Bearer token")
+        }
+        verify(transactionRepository, never()).save(any())
     }
 
     @Test
-    fun `deposit account not found returns 404`() {
+    fun `deposit account not found throws 404`() {
+        whenever(userClient.getUserProfile("Bearer token")).thenReturn(user)
         whenever(accountRepository.findById(99)).thenReturn(Optional.empty())
 
-        val result = controller.deposit(99, DepositDto(BigDecimal("500.00")))
+        assertThrows(org.springframework.web.server.ResponseStatusException::class.java) {
+            controller.deposit(99, DepositDto(BigDecimal("500.00")), "Bearer token")
+        }
+        verify(transactionRepository, never()).save(any())
+    }
 
-        assertEquals(404, result.statusCode.value())
+    @Test
+    fun `deposit unauthorized user throws forbidden`() {
+        val otherAccount = Account(id = 2, userId = 999, accountNumber = "MBD002", balance = BigDecimal("1000.00"))
+        whenever(userClient.getUserProfile("Bearer token")).thenReturn(user)
+        whenever(accountRepository.findById(2)).thenReturn(Optional.of(otherAccount))
+
+        assertThrows(org.springframework.web.server.ResponseStatusException::class.java) {
+            controller.deposit(2, DepositDto(BigDecimal("500.00")), "Bearer token")
+        }
         verify(transactionRepository, never()).save(any())
     }
 
     @Test
     fun `getAccount found returns dto`() {
+        whenever(userClient.getUserProfile("Bearer token")).thenReturn(user)
         whenever(accountRepository.findById(1)).thenReturn(Optional.of(account))
 
-        val result = controller.getAccount(1)
+        val result = controller.getAccount(1, "Bearer token")
 
         assertEquals(200, result.statusCode.value())
         assertEquals("MBD001", result.body!!.accountNumber)
     }
 
     @Test
-    fun `getAccount not found returns 404`() {
+    fun `getAccount not found throws 404`() {
+        whenever(userClient.getUserProfile("Bearer token")).thenReturn(user)
         whenever(accountRepository.findById(99)).thenReturn(Optional.empty())
 
-        val result = controller.getAccount(99)
+        assertThrows(org.springframework.web.server.ResponseStatusException::class.java) {
+            controller.getAccount(99, "Bearer token")
+        }
+    }
 
-        assertEquals(404, result.statusCode.value())
+    @Test
+    fun `getAccount unauthorized user throws forbidden`() {
+        val otherAccount = Account(id = 2, userId = 999, accountNumber = "MBD002", balance = BigDecimal("1000.00"))
+        whenever(userClient.getUserProfile("Bearer token")).thenReturn(user)
+        whenever(accountRepository.findById(2)).thenReturn(Optional.of(otherAccount))
+
+        assertThrows(org.springframework.web.server.ResponseStatusException::class.java) {
+            controller.getAccount(2, "Bearer token")
+        }
     }
 
     @Test
     fun `getAccountsByUser returns accounts`() {
+        whenever(userClient.getUserProfile("Bearer token")).thenReturn(user)
         whenever(accountRepository.findByUserId(1)).thenReturn(listOf(account))
 
-        val result = controller.getAccountsByUser(1)
+        val result = controller.getAccountsByUser(1, "Bearer token")
 
         assertEquals(200, result.statusCode.value())
         assertEquals(1, result.body!!.size)
@@ -127,14 +160,36 @@ class AccountControllerTest {
     }
 
     @Test
+    fun `getAccountsByUser unauthorized user throws forbidden`() {
+        whenever(userClient.getUserProfile("Bearer token")).thenReturn(user)
+
+        assertThrows(org.springframework.web.server.ResponseStatusException::class.java) {
+            controller.getAccountsByUser(999, "Bearer token")
+        }
+    }
+
+    @Test
     fun `getTransactions returns transactions for account`() {
         val tx = Transaction(id = 1, accountId = 1, amount = BigDecimal("500.00"), type = "DEPOSIT", description = "Deposit")
+        whenever(userClient.getUserProfile("Bearer token")).thenReturn(user)
+        whenever(accountRepository.findById(1)).thenReturn(Optional.of(account))
         whenever(transactionRepository.findByAccountId(1)).thenReturn(listOf(tx))
 
-        val result = controller.getTransactions(1)
+        val result = controller.getTransactions(1, "Bearer token")
 
         assertEquals(200, result.statusCode.value())
         assertEquals(1, result.body!!.size)
         assertEquals("DEPOSIT", result.body!![0].type)
+    }
+
+    @Test
+    fun `getTransactions unauthorized user throws forbidden`() {
+        val otherAccount = Account(id = 2, userId = 999, accountNumber = "MBD002", balance = BigDecimal("1000.00"))
+        whenever(userClient.getUserProfile("Bearer token")).thenReturn(user)
+        whenever(accountRepository.findById(2)).thenReturn(Optional.of(otherAccount))
+
+        assertThrows(org.springframework.web.server.ResponseStatusException::class.java) {
+            controller.getTransactions(2, "Bearer token")
+        }
     }
 }

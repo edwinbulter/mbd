@@ -299,6 +299,10 @@ This is redundant (both update holdings). The second consumer is the one that al
 ### Security Defense-in-Depth
 Only `admin-service` implements Spring Security OAuth2 resource server. Other services rely on Istio mesh authentication. This is acceptable for a demo but production should implement application-level security in all services (defense-in-depth).
 
+## Security & Performance
+- Always respect the directory boundaries given in a prompt.
+- Never read files outside the requested service directory to save token budget.
+
 ### Keycloak Realm Roles
 JWT tokens include a top-level `roles` claim (configured by a realm-role protocol mapper in Keycloak). `admin-service` reads this via `JwtGrantedAuthoritiesConverter` with claim name `roles` and prefix `ROLE_`.
 
