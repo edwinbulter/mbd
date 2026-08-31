@@ -51,24 +51,23 @@ class AccountController(
     fun deposit(
         @PathVariable accountId: Long,
         @RequestBody request: DepositDto,
-        @RequestHeader("Authorization") authHeader: String
+        @RequestHeader(value = "Authorization", required = false) authHeader: String?
     ): ResponseEntity<AccountDto> {
-        // Get authenticated user
-        val user = userClient.getUserProfile(authHeader)
-            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authentication")
+        // Get authenticated user (optional for service-to-service calls)
+        val user = authHeader?.let { userClient.getUserProfile(it) }
 
         // Find the account
         val account = accountRepository.findById(accountId)
             .orElse(null) ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found")
 
-        // Authorization check: Verify the authenticated user owns this account
-        if (account.userId != user.id) {
+        // Authorization check: Verify the authenticated user owns this account (only if auth header present)
+        if (user != null && account.userId != user.id) {
             throw ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied to this account")
         }
 
-        // Validate deposit amount is positive
-        if (request.amount <= BigDecimal.ZERO) {
-            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Deposit amount must be positive")
+        // Validate amount is not zero
+        if (request.amount.compareTo(BigDecimal.ZERO) == 0) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Amount cannot be zero")
         }
 
         // Update balance
@@ -77,12 +76,15 @@ class AccountController(
 
         val savedAccount = accountRepository.save(account)
 
-        // Record transaction
+        // Record transaction with appropriate type
+        val transactionType = if (request.amount > BigDecimal.ZERO) "DEPOSIT" else "WITHDRAWAL"
+        val description = if (request.amount > BigDecimal.ZERO) "Deposit" else "Withdrawal"
+
         val transaction = Transaction(
             accountId = accountId,
             amount = request.amount,
-            type = "DEPOSIT",
-            description = "Deposit"
+            type = transactionType,
+            description = description
         )
         transactionRepository.save(transaction)
 
