@@ -121,6 +121,107 @@ curl -s -X POST "http://localhost:8082/admin/realms/mbd/client-scopes/$CLIENT_SC
     }
   }'
 
+# Create admin role
+curl -s -X POST "http://localhost:8082/admin/realms/mbd/roles" \
+  -H "Authorization: Bearer $KEYCLOAK_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "admin",
+    "description": "Administrator role"
+  }'
+
+# Create admin user (admin-1)
+ADMIN_USER_RESPONSE=$(curl -s -X POST "http://localhost:8082/admin/realms/mbd/users" \
+  -H "Authorization: Bearer $KEYCLOAK_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "admin-1",
+    "email": "admin-1@mbd.local",
+    "firstName": "Admin",
+    "lastName": "One",
+    "enabled": true,
+    "emailVerified": true,
+    "credentials": [{
+      "type": "password",
+      "value": "Hello-admin-1",
+      "temporary": false
+    }]
+  }')
+
+# Get admin user ID
+ADMIN_USER_ID=$(curl -s "http://localhost:8082/admin/realms/mbd/users?username=admin-1" \
+  -H "Authorization: Bearer $KEYCLOAK_TOKEN" | jq -r '.[0].id')
+
+ADMIN_KEYCLOAK_ID=$(curl -s "http://localhost:8082/admin/realms/mbd/users/$ADMIN_USER_ID" \
+  -H "Authorization: Bearer $KEYCLOAK_TOKEN" | jq -r '.id')
+
+# Assign admin role to admin-1
+ADMIN_ROLE_ID=$(curl -s "http://localhost:8082/admin/realms/mbd/roles/admin" \
+  -H "Authorization: Bearer $KEYCLOAK_TOKEN" | jq -r '.id')
+
+curl -s -X POST "http://localhost:8082/admin/realms/mbd/users/$ADMIN_USER_ID/role-mappings/realm" \
+  -H "Authorization: Bearer $KEYCLOAK_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "[{\"id\": \"$ADMIN_ROLE_ID\", \"name\": \"admin\"}]"
+
+# Create customer user (user-1)
+CUSTOMER_USER_RESPONSE=$(curl -s -X POST "http://localhost:8082/admin/realms/mbd/users" \
+  -H "Authorization: Bearer $KEYCLOAK_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "user-1",
+    "email": "user-1@mbd.local",
+    "firstName": "User",
+    "lastName": "One",
+    "enabled": true,
+    "emailVerified": true,
+    "credentials": [{
+      "type": "password",
+      "value": "Hello-user-1",
+      "temporary": false
+    }]
+  }')
+
+# Get customer user ID
+CUSTOMER_USER_ID=$(curl -s "http://localhost:8082/admin/realms/mbd/users?username=user-1" \
+  -H "Authorization: Bearer $KEYCLOAK_TOKEN" | jq -r '.[0].id')
+
+CUSTOMER_KEYCLOAK_ID=$(curl -s "http://localhost:8082/admin/realms/mbd/users/$CUSTOMER_USER_ID" \
+  -H "Authorization: Bearer $KEYCLOAK_TOKEN" | jq -r '.id')
+
+# Register users in MBD database via user-service API
+echo "Registering users in MBD database..."
+
+# Port forward to user-service
+kubectl port-forward -n mbd svc/user-service 8083:8080 > /dev/null 2>&1 &
+USER_SVC_PF_PID=$!
+sleep 3
+
+# Register admin user in MBD
+curl -s -X POST "http://localhost:8083/api/users/register" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"keycloakId\": \"$ADMIN_KEYCLOAK_ID\",
+    \"email\": \"admin-1@mbd.local\",
+    \"firstName\": \"Admin\",
+    \"lastName\": \"One\",
+    \"role\": \"admin\"
+  }"
+
+# Register customer user in MBD
+curl -s -X POST "http://localhost:8083/api/users/register" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"keycloakId\": \"$CUSTOMER_KEYCLOAK_ID\",
+    \"email\": \"user-1@mbd.local\",
+    \"firstName\": \"User\",
+    \"lastName\": \"One\",
+    \"role\": \"user\"
+  }"
+
+# Kill user-service port forward
+kill $USER_SVC_PF_PID
+
 echo "Keycloak realm configured successfully"
 
 # Kill port forward
