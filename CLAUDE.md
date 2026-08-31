@@ -10,7 +10,7 @@ MBD (My Bank Demo) is a demo investment-banking microservices application built 
 - **cert-manager PKI** for TLS certificate management
 - **Keycloak SSO** for authentication with JWT validation
 
-The stack: Spring Boot 3.1 + Kotlin 1.9 (backend), React 18 + Vite + TypeScript (frontend), PostgreSQL 15, Kafka 3.7 (KRaft), running on OrbStack/Kind Kubernetes.
+The stack: Spring Boot 3.1 + Kotlin 1.9 (backend), React 18 + Vite + TypeScript (frontend), PostgreSQL 15, Kafka 3.7 (KRaft), running on **Kind (Kubernetes in Docker)** cluster.
 
 ## Monorepo Structure
 
@@ -54,11 +54,16 @@ cd backend
 # Run database migration test
 ./gradlew :user-service:test --tests "com.mbd.user.DatabaseMigrationTest"
 
-# Build Docker image for a service
-docker build --no-cache -t user-service:latest -f user-service/Dockerfile .
+# Build Docker image for a service (run from service directory)
+cd user-service
+docker build -t user-service:latest .
+cd ..
 
-# Load image into OrbStack (automatic) or Kind cluster
-kind load docker-image user-service:latest --name mbd
+# CRITICAL: Load image into Kind cluster (required for Kind, not needed for OrbStack)
+kind load docker-image user-service:latest --name single-node
+
+# After loading images, restart deployment to use new image
+kubectl rollout restart deployment user-service -n mbd
 ```
 
 ### Frontend (React + Vite)
@@ -106,6 +111,56 @@ kubectl exec -n mbd-infra kafka-0 -- /opt/kafka/bin/kafka-topics.sh --list --boo
 - Admin frontend: https://admin.mbd.local
 - Keycloak: https://keycloak.mbd.local
 - Kafbat UI (Kafka browser): https://kafbat.mbd.local
+
+### Kind Cluster Workflows
+
+**CRITICAL for Kind clusters**: Docker images must be explicitly loaded into Kind. Images built on your host are NOT automatically available to the cluster.
+
+```bash
+# Complete workflow: Build → Load → Deploy
+# 1. Build all backend services
+cd backend
+./gradlew build -x test
+cd user-service && docker build -t user-service:latest . && cd ..
+cd account-service && docker build -t account-service:latest . && cd ..
+cd fund-service && docker build -t fund-service:latest . && cd ..
+cd portfolio-service && docker build -t portfolio-service:latest . && cd ..
+cd admin-service && docker build -t admin-service:latest . && cd ..
+cd ..
+
+# 2. Build frontends
+cd frontend/customer-frontend && docker build -t customer-frontend:latest . && cd ../..
+cd frontend/admin-frontend && docker build -t admin-frontend:latest . && cd ../..
+
+# 3. Load ALL images into Kind (REQUIRED - pods will fail without this)
+kind load docker-image \
+  user-service:latest \
+  account-service:latest \
+  fund-service:latest \
+  portfolio-service:latest \
+  admin-service:latest \
+  customer-frontend:latest \
+  admin-frontend:latest \
+  --name single-node
+
+# 4. Restart deployments to pick up new images
+kubectl rollout restart deployment -n mbd
+```
+
+**Single service rebuild** (for faster iteration):
+```bash
+# Example: Rebuild fund-service
+cd backend/fund-service
+docker build -t fund-service:latest .
+kind load docker-image fund-service:latest --name single-node
+kubectl rollout restart deployment fund-service -n mbd
+kubectl logs -f -n mbd -l app=fund-service  # Watch logs
+```
+
+**Common Kind cluster issues**:
+- `ErrImageNeverPull` → Image not loaded into Kind (run `kind load docker-image`)
+- `ImagePullBackOff` → Same as above
+- Service updated but pod still running old code → Forgot to restart deployment after loading image
 
 ## Architecture & Service Communication
 

@@ -6,7 +6,7 @@ This guide describes the testing strategy for the MBD backend services, focusing
 
 ## 1. Automated Integration Tests (Testcontainers)
 
-We use **Testcontainers** to run integration tests against real, ephemeral instances of PostgreSQL and Kafka. This ensures that our code correctly interacts with the infrastructure without affecting the running application in the OrbStack cluster.
+We use **Testcontainers** to run integration tests against real, ephemeral instances of PostgreSQL and Kafka. This ensures that our code correctly interacts with the infrastructure without affecting the running application in the Kubernetes cluster.
 
 ### 1.1 Portfolio Service Integration Test
 The `portfolio-service` contains a robust integration test that validates the core asynchronous "fund price update" flow.
@@ -61,7 +61,7 @@ cd backend
 
 ## 3. Manual Inspection (In-Cluster)
 
-For verifying the system state within the **OrbStack** Kubernetes cluster:
+For verifying the system state within the **Kind** Kubernetes cluster:
 
 ### 3.1 Database Inspection
 Connect to the shared PostgreSQL instance:
@@ -98,7 +98,7 @@ The integration tests run automatically on every push and pull request that touc
 4. Runs `DatabaseMigrationTest` (PostgreSQL via Testcontainers).
 5. Uploads the HTML test reports as a build artifact, even if a step fails.
 
-GitHub-hosted `ubuntu-latest` runners ship with a Docker daemon that Testcontainers talks to directly — this avoids the OrbStack-specific API version issue described below entirely, so CI is the most reliable way to verify these tests pass.
+GitHub-hosted `ubuntu-latest` runners ship with a Docker daemon that Testcontainers talks to directly — this avoids any local Docker API version issues, so CI is the most reliable way to verify these tests pass.
 
 ---
 
@@ -106,24 +106,24 @@ GitHub-hosted `ubuntu-latest` runners ship with a Docker daemon that Testcontain
 
 | Issue | Likely Cause | Solution |
 |-------|--------------|----------|
-| Tests fail with "Docker not found" | Docker Desktop or OrbStack is not running | Start your Docker provider. |
-| Testcontainers timeout | System resources are low | Increase memory allocated to OrbStack/Docker. |
+| Tests fail with "Docker not found" | Docker is not running | Start Docker Desktop, OrbStack, or ensure Kind's Docker is accessible. |
+| Testcontainers timeout | System resources are low | Increase memory allocated to Docker (4GB+ recommended). |
 | Flyway checksum error | A migration file was changed after being applied | Run `./gradlew flywayClean` (local only) or manually fix the checksum in the history table. |
-| IllegalStateException (DockerClientProviderStrategy) | Testcontainers can't find Docker socket or API version mismatch | See "Known issue: OrbStack API version" below. |
+| IllegalStateException (DockerClientProviderStrategy) | Testcontainers can't find Docker socket or API version mismatch | See "Known issue: Docker API version" below. |
 
-### 6.1 Known issue: OrbStack API version mismatch
+### 6.1 Known issue: Docker API version mismatch
 
-On some machines, running the integration tests locally against **OrbStack** fails with:
+On some machines, running the integration tests locally fails with:
 
 ```
 BadRequestException (Status 400: {"message":"client version 1.32 is too old.
 Minimum supported API version is 1.40, please upgrade your client to a newer version"})
 ```
 
-This happens because the `docker-java` client (used internally by Testcontainers) does not always negotiate the Docker API version correctly against OrbStack's daemon, and falls back to an old default. Things that can help:
+This happens because the `docker-java` client (used internally by Testcontainers) does not always negotiate the Docker API version correctly and falls back to an old default. Things that can help:
 
-1. Run `docker context ls` and confirm `orbstack` is the active context.
+1. Run `docker context ls` and confirm the correct context is active (e.g., `orbstack`, `default`, or `desktop-linux`).
 2. Check `~/.testcontainers.properties` for a hardcoded `docker.client.strategy` line — remove it so Testcontainers can auto-detect the right strategy.
 3. Export `DOCKER_API_VERSION=1.40` in your shell **before** starting Gradle (the Gradle daemon must be restarted with `./gradlew --stop` for the new value to take effect, since Gradle daemons cache their environment).
 
-If none of the above resolves it on your machine, run the tests via the **GitHub Actions workflow** instead (see section 5) — this is unaffected by the OrbStack-specific behaviour and is the authoritative way to confirm the tests pass.
+If none of the above resolves it on your machine, run the tests via the **GitHub Actions workflow** instead (see section 5) — this is the most reliable way to confirm the tests pass.
