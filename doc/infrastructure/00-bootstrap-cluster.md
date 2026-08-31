@@ -62,7 +62,35 @@ kubectl get pods -n istio-system
 
 Expected output: `istiod` and `istio-ingressgateway` pods should be Running.
 
-### 3.2. Install cert-manager
+### 3.2. Configure Istio Ingress Gateway for Kind
+
+Kind clusters require the ingress gateway to bind directly to the node's ports 80 and 443 using `hostPort`. This is different from cloud providers where LoadBalancer services get external IPs automatically.
+
+```bash
+# Patch the ingress gateway to use hostPort
+kubectl patch deployment istio-ingressgateway -n istio-system --type='json' -p='[
+  {
+    "op": "add",
+    "path": "/spec/template/spec/containers/0/ports/1/hostPort",
+    "value": 80
+  },
+  {
+    "op": "add",
+    "path": "/spec/template/spec/containers/0/ports/2/hostPort",
+    "value": 443
+  }
+]'
+
+# Wait for the ingress gateway to restart with new configuration
+kubectl rollout status deployment/istio-ingressgateway -n istio-system --timeout=120s
+
+# Verify the pod is running
+kubectl get pods -n istio-system -l app=istio-ingressgateway
+```
+
+This binds container port 8080 (HTTP) to host port 80 and container port 8443 (HTTPS) to host port 443, allowing Kind's port mappings to route traffic correctly.
+
+### 3.3. Install cert-manager
 
 ```bash
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.3/cert-manager.yaml
