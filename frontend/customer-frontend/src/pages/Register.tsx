@@ -1,11 +1,9 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useKeycloak } from '@react-keycloak/web'
 import { customerApi } from '@/services/customerApi'
 
 export default function Register() {
   const { keycloak } = useKeycloak()
-  const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [formData, setFormData] = useState({
@@ -25,7 +23,8 @@ export default function Register() {
         keycloakId: keycloak?.subject,
         role: 'user'
       })
-      navigate('/')
+      // Log out and redirect to login to get a fresh JWT token with all proper claims
+      keycloak?.logout({ redirectUri: window.location.origin })
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed. You might already be registered.')
     } finally {
