@@ -167,9 +167,66 @@ argocd repo list
 
 ---
 
-## 7. Deploy Root Application (GitOps Automation)
+## 7. Build and Load Docker Images into Kind
 
-The root app will automatically deploy all infrastructure and application components:
+**IMPORTANT**: Build and load images BEFORE deploying applications. Kind clusters cannot access Docker images built on your host unless you explicitly load them.
+
+### 7.1. Build All Backend Services
+
+```bash
+cd backend
+
+# Build all services (creates JAR files)
+./gradlew build -x test
+
+# Build Docker images (from each service directory)
+cd user-service && docker build -t user-service:latest . && cd ..
+cd account-service && docker build -t account-service:latest . && cd ..
+cd fund-service && docker build -t fund-service:latest . && cd ..
+cd portfolio-service && docker build -t portfolio-service:latest . && cd ..
+cd admin-service && docker build -t admin-service:latest . && cd ..
+
+cd ..
+```
+
+### 7.2. Build Frontend Images
+
+```bash
+# Customer frontend
+cd frontend/customer-frontend
+docker build -t customer-frontend:latest .
+
+# Admin frontend
+cd ../admin-frontend
+docker build -t admin-frontend:latest .
+
+cd ../..
+```
+
+### 7.3. Load Images into Kind Cluster
+
+**This is the critical step** - without this, pods will fail with `ErrImageNeverPull`:
+
+```bash
+# Load all images at once
+kind load docker-image \
+  user-service:latest \
+  account-service:latest \
+  fund-service:latest \
+  portfolio-service:latest \
+  admin-service:latest \
+  customer-frontend:latest \
+  admin-frontend:latest \
+  --name single-node
+```
+
+This process takes 1-2 minutes as it transfers ~2GB of images to the Kind node.
+
+---
+
+## 8. Deploy Root Application (GitOps Automation)
+
+Now that images are loaded, deploy all infrastructure and application components:
 
 ```bash
 # Apply the root application
@@ -192,76 +249,7 @@ This will create and sync all applications:
 kubectl get applications -n argocd -o custom-columns=NAME:.metadata.name,SYNC:.status.sync.status,HEALTH:.status.health.status
 ```
 
-All applications should show `Synced` and `Healthy` (except those waiting for Docker images - see next section).
-
----
-
-## 8. Build and Load Docker Images into Kind
-
-**IMPORTANT**: Kind clusters cannot access Docker images built on your host unless you explicitly load them.
-
-### 8.1. Build All Backend Services
-
-```bash
-cd backend
-
-# Build all services (creates JAR files)
-./gradlew build -x test
-
-# Build Docker images (from each service directory)
-cd user-service && docker build -t user-service:latest . && cd ..
-cd account-service && docker build -t account-service:latest . && cd ..
-cd fund-service && docker build -t fund-service:latest . && cd ..
-cd portfolio-service && docker build -t portfolio-service:latest . && cd ..
-cd admin-service && docker build -t admin-service:latest . && cd ..
-
-cd ..
-```
-
-### 8.2. Build Frontend Images
-
-```bash
-# Customer frontend
-cd frontend/customer-frontend
-docker build -t customer-frontend:latest .
-
-# Admin frontend
-cd ../admin-frontend
-docker build -t admin-frontend:latest .
-
-cd ../..
-```
-
-### 8.3. Load Images into Kind Cluster
-
-**This is the critical step** - without this, pods will fail with `ErrImageNeverPull`:
-
-```bash
-# Load all images at once
-kind load docker-image \
-  user-service:latest \
-  account-service:latest \
-  fund-service:latest \
-  portfolio-service:latest \
-  admin-service:latest \
-  customer-frontend:latest \
-  admin-frontend:latest \
-  --name single-node
-```
-
-This process takes 1-2 minutes as it transfers ~2GB of images to the Kind node.
-
-### 8.4. Restart Pods to Pick Up Images
-
-If any pods were created before images were loaded, restart them:
-
-```bash
-# Restart all service deployments in mbd namespace
-kubectl rollout restart deployment -n mbd
-
-# Wait for all pods to be ready
-kubectl wait --for=condition=ready pod --all -n mbd --timeout=300s
-```
+All applications should show `Synced` and `Healthy`.
 
 ---
 
@@ -278,7 +266,7 @@ kubectl get pods -n mbd
 ```
 
 **Troubleshooting**:
-- If pods show `ErrImageNeverPull`: You forgot to load images (go back to step 8.3)
+- If pods show `ErrImageNeverPull`: Images not loaded into Kind (go back to step 7.3)
 - If pods show `CrashLoopBackOff`: Check logs with `kubectl logs -n <namespace> <pod-name>`
 - If Keycloak fails: Ensure `keycloak-postgresql-0` pod is running
 
@@ -417,8 +405,8 @@ kind delete cluster --name single-node
 - **Fix**: Check `argocd repo list` - repository should show "Successful" connection status
 
 ### Pods stuck in "ImagePullBackOff" or "ErrImageNeverPull"
-- **Cause**: Images not loaded into Kind cluster
-- **Fix**: Run step 8.3 to load images, then restart deployments
+- **Cause**: Images not loaded into Kind cluster before deploying
+- **Fix**: Run step 7.3 to load images, then restart: `kubectl rollout restart deployment -n mbd`
 
 ### Keycloak pod in CrashLoopBackOff
 - **Cause**: `keycloak-postgresql-0` pod not running
