@@ -67,8 +67,7 @@ curl -s -X POST "http://localhost:8082/admin/realms/mbd/clients" \
     "webOrigins": ["http://localhost:*"],
     "standardFlowEnabled": true,
     "directAccessGrantsEnabled": true,
-    "serviceAccountsEnabled": true,
-    "validRedirectUris": ["http://localhost:*/*"]
+    "serviceAccountsEnabled": true
   }'
 
 # Create customer-frontend public client
