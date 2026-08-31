@@ -1,4 +1,4 @@
-apiVersion: networking.istio.io/v1beta1
+apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
   name: mbd-internal-and-cross
@@ -9,7 +9,7 @@ spec:
     tls:
       mode: ISTIO_MUTUAL
 ---
-apiVersion: networking.istio.io/v1beta1
+apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
   name: postgresql-cross-rule
@@ -20,7 +20,7 @@ spec:
     tls:
       mode: ISTIO_MUTUAL
 ---
-apiVersion: networking.istio.io/v1beta1
+apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
   name: mbd-infra-internal
