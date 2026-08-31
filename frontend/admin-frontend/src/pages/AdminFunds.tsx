@@ -19,7 +19,7 @@ export default function AdminFunds() {
     isin: '',
     currentPrice: 100.0,
     currency: 'EUR',
-    volatility: 0.02,
+    volatility: 2, // Display as percentage (2% = 2)
     updateFrequencyMinutes: 5
   })
 
@@ -42,8 +42,21 @@ export default function AdminFunds() {
   const handleCreateFund = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await adminApi.createFund(newFund)
+      // Convert volatility from percentage to decimal before sending to backend
+      const fundData = {
+        ...newFund,
+        volatility: newFund.volatility / 100
+      }
+      await adminApi.createFund(fundData)
       setShowAddForm(false)
+      setNewFund({
+        name: '',
+        isin: '',
+        currentPrice: 100.0,
+        currency: 'EUR',
+        volatility: 2,
+        updateFrequencyMinutes: 5
+      })
       fetchFunds()
     } catch (error) {
       console.error('Failed to create fund', error)
