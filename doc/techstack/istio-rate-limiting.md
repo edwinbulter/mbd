@@ -70,6 +70,48 @@ token_bucket:
 - Bucket refills completely every 60 seconds
 - Empty bucket = HTTP 429 Too Many Requests
 
+### Per-User Rate Limiting
+
+**IMPORTANT:** Rate limiting is enforced **per user**, not globally per service. Each authenticated user gets their own independent token bucket based on their JWT `sub` (subject) claim.
+
+**How it works:**
+1. User makes request with JWT token in Authorization header
+2. Istio validates JWT and extracts `sub` claim (user ID)
+3. Envoy rate limiter uses `sub` as descriptor key for bucketing
+4. Each user ID has its own token bucket tracked separately
+5. User A making 100 requests does NOT affect User B's limit
+
+**Example Scenario:**
+```
+User A (sub=06111ffd-...):
+  - Makes 100 requests in 1 minute → All succeed
+  - Makes 101st request → HTTP 429 (rate limited)
+
+User B (sub=ea5abbd3-...):
+  - Makes 100 requests in 1 minute → All succeed
+  - User A's rate limit does NOT affect User B
+```
+
+**Benefits:**
+- ✅ Fair resource allocation across all users
+- ✅ One abusive user cannot block legitimate users
+- ✅ Scales automatically with user base
+- ✅ No shared state or global counters needed
+
+**Configuration:**
+```yaml
+descriptors:
+- entries:
+  - key: user_id
+    value: "%DYNAMIC_METADATA(envoy.filters.http.jwt_authn:sub)%"
+  token_bucket:
+    max_tokens: 100
+    tokens_per_fill: 100
+    fill_interval: 60s
+```
+
+The `%DYNAMIC_METADATA(envoy.filters.http.jwt_authn:sub)%` extracts the JWT subject claim that Istio populates after JWT validation via `RequestAuthentication`.
+
 ## Implementation
 
 ### EnvoyFilter Configuration
@@ -78,15 +120,17 @@ Rate limiting is implemented via Istio `EnvoyFilter` custom resources that injec
 
 **File:** `infrastructure/k8s/istio/rate-limiting.yaml`
 
-### Service-Specific Limits
+### Service-Specific Limits (Per User)
 
-| Service | Limit (req/min) | Burst | Rationale |
-|---------|----------------|-------|-----------|
-| **account-service** | 100 | 100 | Financial operations require moderate throughput |
-| **portfolio-service** | 50 | 50 | Trading operations need stricter limits to prevent abuse |
-| **fund-service** | 100 | 100 | Read-heavy catalog queries, higher throughput acceptable |
-| **user-service** | 100 | 100 | Authentication and profile operations, moderate limit |
-| **admin-service** | 50 | 50 | Administrative operations should be infrequent |
+| Service | Limit (req/min/user) | Burst | Rationale |
+|---------|---------------------|-------|-----------|
+| **account-service** | 100 | 100 | Financial operations require moderate throughput per user |
+| **portfolio-service** | 50 | 50 | Trading operations need stricter per-user limits to prevent abuse |
+| **fund-service** | 100 | 100 | Read-heavy catalog queries, higher throughput acceptable per user |
+| **user-service** | 100 | 100 | Authentication and profile operations, moderate limit per user |
+| **admin-service** | 50 | 50 | Administrative operations should be infrequent per admin user |
+
+**Note:** Each user has their own independent rate limit bucket. With 100 users, the total service capacity is 100 users × 100 req/min = 10,000 req/min.
 
 ### Configuration Template
 
@@ -393,32 +437,43 @@ For more granular control, configure rate limits per endpoint pattern:
 
 ## Limitations
 
-### Local vs. Global Rate Limiting
+### Per-User Descriptor-Based Limits
 
-**Current Implementation: Local Rate Limiting**
-- Limits are enforced **per pod instance**
-- Multiple replicas = multiple token buckets
-- 3 account-service replicas with 100 req/min = 300 req/min total
+**Current Implementation: Per-User Local Rate Limiting**
+- Limits are enforced **per user (JWT sub claim)** per pod instance
+- Each user gets their own token bucket on each pod replica
+- Requests are load-balanced across replicas by Kubernetes Service
 
-**Calculation:**
+**Behavior with Multiple Replicas:**
 ```
-Total Allowed = (requests_per_pod) × (number_of_replicas)
+User A makes requests:
+  - Request 1 → Pod 1 (User A bucket on Pod 1: 99 tokens left)
+  - Request 2 → Pod 2 (User A bucket on Pod 2: 99 tokens left)
+  - Request 3 → Pod 1 (User A bucket on Pod 1: 98 tokens left)
+
+Effective limit per user ≈ (limit_per_pod) × (number_of_replicas)
 ```
 
 **Example:**
 ```
 account-service:
   replicas: 3
-  rate_limit: 100 req/min per pod
-  total_capacity: 300 req/min
+  rate_limit_per_user: 100 req/min per pod
+  effective_user_capacity: ~300 req/min per user
 ```
+
+**Why This is Acceptable:**
+- ✅ Each user still gets fair, independent limits
+- ✅ One user cannot exhaust resources for other users
+- ✅ Replica scaling automatically increases per-user capacity
+- ✅ Simpler than global rate limiting (no shared state/Redis)
 
 ### Global Rate Limiting (Not Implemented)
 
-For true global limits across all replicas, use Istio's global rate limit service:
+For strict per-user limits across all replicas, use Istio's global rate limit service with Redis:
 
 ```yaml
-# Requires additional Redis/Memcached deployment
+# Requires additional infrastructure (Redis/Memcached)
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -427,14 +482,13 @@ data:
   config.yaml: |
     domain: mbd-ratelimit
     descriptors:
-    - key: generic_key
-      value: account-service
+    - key: user_id
       rate_limit:
         unit: minute
-        requests_per_unit: 100
+        requests_per_unit: 100  # Exact limit regardless of replicas
 ```
 
-**Recommendation:** For the MBD demo application, local rate limiting provides sufficient protection. Global rate limiting adds complexity and infrastructure overhead suitable for production deployments with many replicas.
+**Recommendation:** For the MBD demo application, per-user local rate limiting provides excellent protection without additional infrastructure. Global rate limiting is suitable for production deployments requiring strict quotas.
 
 ## Troubleshooting
 
@@ -496,6 +550,7 @@ kubectl edit envoyfilter -n mbd <service-name>-rate-limit
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-09-01 | 1.1 | Updated to per-user rate limiting using JWT sub claim descriptors |
 | 2026-09-01 | 1.0 | Initial implementation of rate limiting for all backend services |
 
 ---

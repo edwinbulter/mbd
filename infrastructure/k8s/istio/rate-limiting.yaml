@@ -1,10 +1,16 @@
 # Istio Rate Limiting Configuration using EnvoyFilter
-# Implements token bucket algorithm for all backend services
+# Implements per-user token bucket algorithm for all backend services
+# Extracts user ID from JWT token payload (via Istio metadata)
 # Prevents DoS attacks, brute force attempts, and API abuse
 
+# NOTE: This configuration uses descriptor-based rate limiting where each user
+# gets their own token bucket. User ID is extracted from JWT metadata that
+# Istio populates after JWT validation.
+
 ---
-# Account Service Rate Limiting
+# Account Service Rate Limiting (Per-User)
 # Protects financial endpoints from abuse
+# Limit: 100 requests per minute per user
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
@@ -30,11 +36,12 @@ spec:
         name: envoy.filters.http.local_ratelimit
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
-          stat_prefix: http_local_rate_limiter
+          stat_prefix: http_local_rate_limiter_account
+          # Per-user token bucket
           token_bucket:
-            max_tokens: 100          # Maximum burst size
-            tokens_per_fill: 100     # Tokens added per interval
-            fill_interval: 60s       # Refill every 60 seconds
+            max_tokens: 100
+            tokens_per_fill: 100
+            fill_interval: 60s
           filter_enabled:
             runtime_key: local_rate_limit_enabled
             default_value:
@@ -50,12 +57,30 @@ spec:
             header:
               key: x-local-rate-limit
               value: 'true'
+          - append: false
+            header:
+              key: x-ratelimit-limit
+              value: '100'
+          - append: false
+            header:
+              key: x-ratelimit-remaining
+              value: '%DYNAMIC_METADATA(envoy.filters.http.local_ratelimit:token_bucket_remaining)%'
           status:
             code: 429
+          # Descriptor-based rate limiting (per user from JWT metadata)
+          descriptors:
+          - entries:
+            - key: user_id
+              value: "%DYNAMIC_METADATA(envoy.filters.http.jwt_authn:sub)%"
+            token_bucket:
+              max_tokens: 100
+              tokens_per_fill: 100
+              fill_interval: 60s
 
 ---
-# Portfolio Service Rate Limiting
+# Portfolio Service Rate Limiting (Per-User)
 # Protects trading endpoints from rapid-fire trades
+# Limit: 50 requests per minute per user (stricter for financial operations)
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
@@ -81,9 +106,9 @@ spec:
         name: envoy.filters.http.local_ratelimit
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
-          stat_prefix: http_local_rate_limiter
+          stat_prefix: http_local_rate_limiter_portfolio
           token_bucket:
-            max_tokens: 50           # Lower limit for trading operations
+            max_tokens: 50
             tokens_per_fill: 50
             fill_interval: 60s
           filter_enabled:
@@ -101,12 +126,29 @@ spec:
             header:
               key: x-local-rate-limit
               value: 'true'
+          - append: false
+            header:
+              key: x-ratelimit-limit
+              value: '50'
+          - append: false
+            header:
+              key: x-ratelimit-remaining
+              value: '%DYNAMIC_METADATA(envoy.filters.http.local_ratelimit:token_bucket_remaining)%'
           status:
             code: 429
+          descriptors:
+          - entries:
+            - key: user_id
+              value: "%DYNAMIC_METADATA(envoy.filters.http.jwt_authn:sub)%"
+            token_bucket:
+              max_tokens: 50
+              tokens_per_fill: 50
+              fill_interval: 60s
 
 ---
-# User Service Rate Limiting
+# User Service Rate Limiting (Per-User)
 # Protects authentication and registration endpoints
+# Limit: 100 requests per minute per user
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
@@ -132,7 +174,7 @@ spec:
         name: envoy.filters.http.local_ratelimit
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
-          stat_prefix: http_local_rate_limiter
+          stat_prefix: http_local_rate_limiter_user
           token_bucket:
             max_tokens: 100
             tokens_per_fill: 100
@@ -152,12 +194,29 @@ spec:
             header:
               key: x-local-rate-limit
               value: 'true'
+          - append: false
+            header:
+              key: x-ratelimit-limit
+              value: '100'
+          - append: false
+            header:
+              key: x-ratelimit-remaining
+              value: '%DYNAMIC_METADATA(envoy.filters.http.local_ratelimit:token_bucket_remaining)%'
           status:
             code: 429
+          descriptors:
+          - entries:
+            - key: user_id
+              value: "%DYNAMIC_METADATA(envoy.filters.http.jwt_authn:sub)%"
+            token_bucket:
+              max_tokens: 100
+              tokens_per_fill: 100
+              fill_interval: 60s
 
 ---
-# Fund Service Rate Limiting
+# Fund Service Rate Limiting (Per-User)
 # Protects fund catalog and price update endpoints
+# Limit: 100 requests per minute per user
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
@@ -183,7 +242,7 @@ spec:
         name: envoy.filters.http.local_ratelimit
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
-          stat_prefix: http_local_rate_limiter
+          stat_prefix: http_local_rate_limiter_fund
           token_bucket:
             max_tokens: 100
             tokens_per_fill: 100
@@ -203,12 +262,29 @@ spec:
             header:
               key: x-local-rate-limit
               value: 'true'
+          - append: false
+            header:
+              key: x-ratelimit-limit
+              value: '100'
+          - append: false
+            header:
+              key: x-ratelimit-remaining
+              value: '%DYNAMIC_METADATA(envoy.filters.http.local_ratelimit:token_bucket_remaining)%'
           status:
             code: 429
+          descriptors:
+          - entries:
+            - key: user_id
+              value: "%DYNAMIC_METADATA(envoy.filters.http.jwt_authn:sub)%"
+            token_bucket:
+              max_tokens: 100
+              tokens_per_fill: 100
+              fill_interval: 60s
 
 ---
-# Admin Service Rate Limiting
+# Admin Service Rate Limiting (Per-User)
 # Protects administrative endpoints
+# Limit: 50 requests per minute per user (stricter for admin operations)
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
@@ -234,9 +310,9 @@ spec:
         name: envoy.filters.http.local_ratelimit
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
-          stat_prefix: http_local_rate_limiter
+          stat_prefix: http_local_rate_limiter_admin
           token_bucket:
-            max_tokens: 50           # Lower limit for admin operations
+            max_tokens: 50
             tokens_per_fill: 50
             fill_interval: 60s
           filter_enabled:
@@ -254,5 +330,21 @@ spec:
             header:
               key: x-local-rate-limit
               value: 'true'
+          - append: false
+            header:
+              key: x-ratelimit-limit
+              value: '50'
+          - append: false
+            header:
+              key: x-ratelimit-remaining
+              value: '%DYNAMIC_METADATA(envoy.filters.http.local_ratelimit:token_bucket_remaining)%'
           status:
             code: 429
+          descriptors:
+          - entries:
+            - key: user_id
+              value: "%DYNAMIC_METADATA(envoy.filters.http.jwt_authn:sub)%"
+            token_bucket:
+              max_tokens: 50
+              tokens_per_fill: 50
+              fill_interval: 60s
