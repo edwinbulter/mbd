@@ -104,7 +104,7 @@ This document tracks all security vulnerabilities discovered and remediated in t
 
 **Detailed Reports:**
 - [Rate Limiting Documentation](doc/techstack/istio-rate-limiting.md)
-- [account-service v3.1](doc/OWASP-validation-result-account-service-3.md#a07-001-rate-limiting)
+- [account-service v3 (search for "A07-001")](doc/OWASP-validation-result-account-service-3.md)
 
 ---
 
@@ -200,7 +200,7 @@ secureRandom.nextBytes(randomBytes)
 
 **Detailed Reports:**
 - [account-service v2](doc/OWASP-validation-result-account-service-2.md)
-- [account-service v1 (initial assessment)](doc/OWASP-validation-result-account-service.md)
+- [account-service v1 (initial assessment)](doc/OWASP-validation-result-account-service-1.md)
 
 ---
 
@@ -289,7 +289,7 @@ The following findings remain unresolved but do not pose immediate security risk
 ### OWASP Validation Reports
 - [account-service v3 (Final)](doc/OWASP-validation-result-account-service-3.md) - 2026-09-01
 - [account-service v2](doc/OWASP-validation-result-account-service-2.md) - 2026-08-30
-- [account-service v1 (Initial)](doc/OWASP-validation-result-account-service.md)
+- [account-service v1 (Initial)](doc/OWASP-validation-result-account-service-1.md)
 - [customer-frontend](doc/OWASP-validation-result-customer-frontend.md) - 2026-09-01
 
 ### Technical Documentation
