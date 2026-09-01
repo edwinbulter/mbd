@@ -94,18 +94,17 @@ class AccountController(
     @GetMapping("/{accountId}")
     fun getAccount(
         @PathVariable accountId: Long,
-        @RequestHeader("Authorization") authHeader: String
+        @RequestHeader(value = "Authorization", required = false) authHeader: String?
     ): ResponseEntity<AccountDto> {
-        // Get authenticated user
-        val user = userClient.getUserProfile(authHeader)
-            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authentication")
+        // Get authenticated user (optional for service-to-service calls)
+        val user = authHeader?.let { userClient.getUserProfile(it) }
 
         // Find the account
         val account = accountRepository.findById(accountId)
             .orElse(null) ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found")
 
-        // Authorization check: Verify the authenticated user owns this account
-        if (account.userId != user.id) {
+        // Authorization check: Verify the authenticated user owns this account (only if auth header present)
+        if (user != null && account.userId != user.id) {
             throw ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied to this account")
         }
 

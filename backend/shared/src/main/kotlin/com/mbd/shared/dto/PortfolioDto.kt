@@ -13,7 +13,7 @@ data class TradeDto(
     val accountId: Long,
     val fundId: Long,
     val quantity: BigDecimal,
-    val price: BigDecimal,
+    val price: BigDecimal? = null,  // Optional - portfolio-service fetches current price from fund-service
     val type: String // BUY or SELL
 )
 
