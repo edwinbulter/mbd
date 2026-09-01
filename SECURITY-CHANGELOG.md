@@ -52,8 +52,8 @@ This document tracks all security vulnerabilities discovered and remediated in t
 - `98383e5` - Updated customer-frontend OWASP report
 
 **Detailed Reports:**
-- [account-service v3.2](doc/OWASP-validation-result-account-service-3.md#a04-002-no-backend-validation-for-deposittrade-limits-high---fixed-)
-- [customer-frontend](doc/OWASP-validation-result-customer-frontend.md#️-a04-001-no-frontend-input-validation-for-deposittrade-limits-medium)
+- [account-service v3 (search for "A04-002")](doc/OWASP-validation-result-account-service-3.md)
+- [customer-frontend (search for "A04-001")](doc/OWASP-validation-result-customer-frontend.md)
 
 ---
 
