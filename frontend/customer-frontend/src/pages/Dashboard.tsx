@@ -16,6 +16,13 @@ export default function Dashboard() {
   const [sellHolding, setSellHolding] = useState<any>(null)
   const [sellQuantity, setSellQuantity] = useState('1')
   const [selling, setSelling] = useState(false)
+  const [depositError, setDepositError] = useState('')
+  const [accountLimits, setAccountLimits] = useState<{
+    maxDepositAmount: number
+    maxWithdrawalAmount: number
+    minDepositAmount: number
+    minWithdrawalAmount: number
+  } | null>(null)
 
   const initDashboard = async () => {
     try {
@@ -47,6 +54,12 @@ export default function Dashboard() {
 
   useEffect(() => {
     initDashboard()
+    // Fetch account limits for client-side validation (UX only, not security)
+    customerApi.getAccountLimits().then(res => {
+      setAccountLimits(res.data)
+    }).catch(err => {
+      console.error('Failed to fetch account limits', err)
+    })
   }, [navigate])
 
   const handleOpenAccount = async () => {
@@ -83,14 +96,31 @@ export default function Dashboard() {
   }
 
   const handleDeposit = async () => {
-    if (!account) return
+    if (!account || !accountLimits) return
+
+    const amount = parseFloat(depositAmount)
+
+    // Client-side validation for UX (backend enforces security)
+    if (amount < accountLimits.minDepositAmount) {
+      setDepositError(`Deposit amount must be at least €${accountLimits.minDepositAmount}`)
+      return
+    }
+    if (amount > accountLimits.maxDepositAmount) {
+      setDepositError(`Deposit amount exceeds maximum limit of €${accountLimits.maxDepositAmount.toLocaleString()}`)
+      return
+    }
+
     try {
       setLoading(true)
-      await customerApi.deposit(account.id, parseFloat(depositAmount))
+      setDepositError('')
+      await customerApi.deposit(account.id, amount)
       setShowDeposit(false)
+      setDepositAmount('1000')
       await initDashboard()
-    } catch (error) {
-      console.error('Deposit failed', error)
+    } catch (error: any) {
+      // Backend validation failed (real security control)
+      const errorMsg = error.response?.data?.message || error.message || 'Deposit failed'
+      setDepositError(errorMsg)
     } finally {
       setLoading(false)
     }
@@ -149,19 +179,37 @@ export default function Dashboard() {
               <input
                 type="number"
                 value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value)}
+                onChange={(e) => {
+                  setDepositAmount(e.target.value)
+                  setDepositError('')
+                }}
+                min={accountLimits?.minDepositAmount || 0.01}
+                max={accountLimits?.maxDepositAmount || 100000}
+                step="0.01"
                 className="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-2xl font-bold"
               />
+              {accountLimits && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Limits: €{accountLimits.minDepositAmount} - €{accountLimits.maxDepositAmount.toLocaleString()}
+                </p>
+              )}
+              {depositError && (
+                <p className="mt-2 text-sm text-red-600 font-semibold">{depositError}</p>
+              )}
             </div>
             <div className="flex space-x-4">
               <button
                 onClick={handleDeposit}
-                className="flex-1 bg-green-600 text-white py-2 rounded font-semibold hover:bg-green-700 transition"
+                disabled={!accountLimits}
+                className="flex-1 bg-green-600 text-white py-2 rounded font-semibold hover:bg-green-700 transition disabled:opacity-50"
               >
                 Confirm Deposit
               </button>
               <button
-                onClick={() => setShowDeposit(false)}
+                onClick={() => {
+                  setShowDeposit(false)
+                  setDepositError('')
+                }}
                 className="flex-1 bg-gray-200 text-gray-700 py-2 rounded font-semibold hover:bg-gray-300 transition"
               >
                 Cancel

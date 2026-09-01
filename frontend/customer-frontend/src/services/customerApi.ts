@@ -6,12 +6,14 @@ export const customerApi = {
   getAccounts: (userId: number) => api.get(`/api/accounts/user/${userId}`),
   createAccount: (data: any) => api.post('/api/accounts', data),
   getFunds: () => api.get('/api/funds'),
-  deposit: (accountId: number, amount: number) => 
+  deposit: (accountId: number, amount: number) =>
     api.post(`/api/accounts/${accountId}/deposit`, { amount }),
   getPortfolio: (accountId: number) => api.get(`/api/portfolio/${accountId}`),
   getPortfolioHistory: (accountId: number) => api.get(`/api/portfolio/${accountId}/history`),
-  buyFund: (data: { accountId: number, fundId: number, quantity: number, price: number }) => 
+  buyFund: (data: { accountId: number, fundId: number, quantity: number, price: number }) =>
     api.post('/api/portfolio/trade', { ...data, type: 'BUY' }),
-  sellFund: (data: { accountId: number, fundId: number, quantity: number, price: number }) => 
+  sellFund: (data: { accountId: number, fundId: number, quantity: number, price: number }) =>
     api.post('/api/portfolio/trade', { ...data, type: 'SELL' }),
+  getAccountLimits: () => api.get('/api/accounts/config/limits'),
+  getTradeLimits: () => api.get('/api/portfolio/config/limits'),
 }

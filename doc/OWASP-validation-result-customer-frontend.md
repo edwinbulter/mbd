@@ -17,14 +17,14 @@ This report documents the security posture of the customer-frontend single-page 
 | Priority | Total Findings | Status |
 |----------|---------------|--------|
 | **CRITICAL** | 0 | ✅ **NONE FOUND** |
-| **HIGH** | 4 | 🔴 **ACTION REQUIRED** |
-| **MEDIUM** | 8 | 🟡 **SHOULD FIX** |
+| **HIGH** | 3 | 🔴 **ACTION REQUIRED** |
+| **MEDIUM** | 9 | 🟡 **SHOULD FIX** |
 | **LOW** | 3 | ⚠️ **INFORMATIONAL** |
 | **TOTAL** | 15 | Initial Assessment |
 
 ### Risk Assessment
 
-**Current Risk Level:** 🟡 **MEDIUM** (0 CRITICAL, 4 HIGH, 8 MEDIUM, 3 LOW findings)
+**Current Risk Level:** 🟡 **MEDIUM** (0 CRITICAL, 3 HIGH, 9 MEDIUM, 3 LOW findings)
 
 **Overall Security Posture:** The customer-frontend implements proper authentication via Keycloak PKCE flow and automatic JWT bearer token injection. However, several high-priority issues related to input validation, security headers, token refresh, and error handling need to be addressed before production deployment.
 
@@ -39,10 +39,9 @@ This report documents the security posture of the customer-frontend single-page 
 
 ### Critical Concerns
 
-- 🔴 **No Frontend Input Validation**: Missing maximum limits on deposit/trade amounts
 - 🔴 **Missing Security Headers**: No CSP, X-Frame-Options, or other security headers
 - 🔴 **No Token Refresh**: Keycloak JWT tokens expire without automatic refresh
-- 🔴 **Sensitive Data in Console**: Error messages logged to browser console
+- 🔴 **No Request Throttling**: Client polling without pause on hidden tabs
 
 ---
 
@@ -186,19 +185,32 @@ api.get(`/api/accounts/${accountId}`) // Template literal - safe
 
 ### A04:2025 – Insecure Design
 
-**Status:** 🔴 **FAIL** (2 HIGH, 2 MEDIUM findings)
+**Status:** 🔴 **FAIL** (1 HIGH, 3 MEDIUM findings)
 
-#### 🔴 A04-001: No Maximum Deposit/Trade Limits (HIGH)
+#### ⚠️ A04-001: No Frontend Input Validation for Deposit/Trade Limits (MEDIUM)
 
 **Files:**
 - `src/pages/Dashboard.tsx:149-154` (Deposit modal)
 - `src/pages/Funds.tsx:127-134` (Buy quantity input)
 - `src/pages/Dashboard.tsx:260-268` (Sell quantity input)
 
-**Severity:** HIGH
+**Severity:** MEDIUM (downgraded from HIGH - see note below)
 **CWE:** CWE-20 (Improper Input Validation)
 
-**Vulnerability:**
+**⚠️ IMPORTANT - Classification Clarification:**
+
+This finding was originally classified as HIGH, but has been **downgraded to MEDIUM** because:
+
+1. **Frontend validation is UX, not security** - Can be bypassed via browser DevTools or direct API calls
+2. **Backend must enforce limits** - The real security control is in account-service (see A04-002 in backend report)
+3. **Defense-in-depth approach** - Frontend provides immediate feedback, backend enforces security
+
+**Why This is MEDIUM (Not HIGH):**
+- ✅ Backend validation is the actual security control (HIGH priority finding in backend report)
+- ⚠️ Frontend validation improves UX by preventing round-trip to backend for invalid input
+- ❌ Users can bypass frontend validation, so it's not a security boundary
+
+**Issue:**
 
 **1. Deposit Modal - No Maximum Limit:**
 ```typescript
@@ -252,59 +264,59 @@ Result: Massive financial operations bypass business rules
 />
 ```
 
-**Real-World Impact:**
-- **Money Laundering**: Deposit €999 billion to bypass detection thresholds
-- **Market Manipulation**: Buy 1 billion shares to artificially inflate demand
-- **System Abuse**: Trigger race conditions with massive transactions
-- **Regulatory Violation**: Bypass KYC/AML reporting thresholds (e.g., $10,000 limit)
+**Real-World Impact (UX):**
+- **Poor User Experience**: Users must wait for backend error on invalid input
+- **Wasted Bandwidth**: Unnecessary API calls for obviously invalid amounts
+- **User Frustration**: No immediate feedback on input validation errors
 
-**Recommended Fix:**
+**⚠️ NOTE:** The security risks (money laundering, market manipulation, regulatory violations) are addressed by **backend validation** (see account-service A04-002 HIGH finding). Frontend validation is for UX only.
+
+**Recommended Fix (Fetch Limits from Backend):**
+
+**Best Practice: Single Source of Truth**
+
+Instead of hardcoding limits in frontend, fetch them from backend API:
 
 ```typescript
-// Add business rule constants
-const MAX_DEPOSIT_AMOUNT = 100000; // €100,000 per deposit
-const MAX_TRADE_QUANTITY = 10000; // 10,000 shares per trade
+// 1. Add backend endpoint to expose limits
+// See account-service A04-002 recommended fix for backend implementation
 
-// Deposit modal
-<input
-  type="number"
-  step="0.01"
-  min="0.01"
-  max={MAX_DEPOSIT_AMOUNT}
-  value={depositAmount}
-  onChange={(e) => setDepositAmount(e.target.value)}
-  className="w-full ..."
-/>
-{parseFloat(depositAmount) > MAX_DEPOSIT_AMOUNT && (
-  <p className="text-red-600 text-sm mt-1">
-    Maximum deposit is €{MAX_DEPOSIT_AMOUNT.toLocaleString()}
-  </p>
-)}
+// 2. Frontend fetches limits from API
+// src/services/customerApi.ts
+export const customerApi = {
+  getLimits: () => api.get('/api/accounts/config/limits'),
+  // ... other methods
+}
 
-// Buy quantity input
-<input
-  type="number"
-  step="0.01"
-  min="0.01"
-  max={MAX_TRADE_QUANTITY}
-  value={quantity}
-  onChange={(e) => setQuantity(e.target.value)}
-  className="w-full ..."
-/>
-```
+// 3. Dashboard.tsx - Fetch and use limits
+const [limits, setLimits] = useState<{
+  maxDepositAmount: number
+  maxWithdrawalAmount: number
+  minDepositAmount: number
+  maxTradeQuantity: number
+} | null>(null)
 
-**Additional Validation:**
-```typescript
+useEffect(() => {
+  const fetchLimits = async () => {
+    try {
+      const res = await customerApi.getLimits()
+      setLimits(res.data)
+    } catch (error) {
+      console.error('Failed to fetch limits', error)
+    }
+  }
+  fetchLimits()
+}, [])
+
+// 4. Use limits in input validation
 const handleDeposit = async () => {
-  if (!account) return
+  if (!account || !limits) return
 
   const amount = parseFloat(depositAmount)
-  if (amount <= 0) {
-    setError('Amount must be positive')
-    return
-  }
-  if (amount > MAX_DEPOSIT_AMOUNT) {
-    setError(`Maximum deposit is €${MAX_DEPOSIT_AMOUNT.toLocaleString()}`)
+
+  // Frontend validation for UX (not security!)
+  if (amount < limits.minDepositAmount || amount > limits.maxDepositAmount) {
+    setError(`Deposit must be between €${limits.minDepositAmount} and €${limits.maxDepositAmount.toLocaleString()}`)
     return
   }
 
@@ -313,15 +325,41 @@ const handleDeposit = async () => {
     await customerApi.deposit(account.id, amount)
     setShowDeposit(false)
     await initDashboard()
-  } catch (error) {
-    console.error('Deposit failed', error)
+  } catch (error: any) {
+    // Backend validation failed (real security control)
+    setError(error.response?.data?.message || 'Deposit failed')
   } finally {
     setLoading(false)
   }
 }
+
+// 5. Add HTML5 validation attributes
+{limits && (
+  <input
+    type="number"
+    step="0.01"
+    min={limits.minDepositAmount}
+    max={limits.maxDepositAmount}
+    value={depositAmount}
+    onChange={(e) => setDepositAmount(e.target.value)}
+    className="w-full ..."
+  />
+)}
 ```
 
-**Status:** 🔴 **NOT IMPLEMENTED** - High priority fix required
+**Why This Approach is Correct:**
+
+1. ✅ **Backend enforces security** - Cannot be bypassed
+2. ✅ **Single source of truth** - Limits defined in backend, fetched by frontend
+3. ✅ **Flexible configuration** - Limits can change without redeploying frontend
+4. ✅ **Defense-in-depth** - Frontend validates for UX, backend validates for security
+5. ✅ **Immediate feedback** - Users see validation errors before submitting
+
+**Status:** ⚠️ **NOT IMPLEMENTED** - Medium priority (UX improvement)
+
+**Dependencies:**
+- **CRITICAL**: Backend must implement A04-002 (HIGH priority) first
+- **THEN**: Frontend can fetch limits for UX validation
 
 ---
 
@@ -1504,17 +1542,19 @@ root.render(
 
 | ID | Finding | Impact | Effort |
 |----|---------|--------|--------|
-| A04-001 | No maximum deposit/trade limits | Financial abuse, regulatory violation | 2-4 hours |
 | A04-002 | No client-side request throttling | DoS, rate limit exhaustion | 1-2 hours |
 | A05-001 | Missing security headers | Clickjacking, MIME-sniffing attacks | 1 hour (Nginx config) |
 | A07-001 | No automatic JWT token refresh | Poor UX, session expiration issues | 2-4 hours |
 
-**Estimated Total Effort: 6-11 hours**
+**Estimated Total Effort: 4-7 hours**
+
+**Note:** A04-001 (frontend input validation) was downgraded to MEDIUM because it's a UX issue, not a security issue. The real security control is backend validation (account-service A04-002 HIGH).
 
 ### 3.2 Should Fix (MEDIUM Priority)
 
 | ID | Finding | Impact | Effort |
 |----|---------|--------|--------|
+| A04-001 | No frontend input validation (UX) | Poor UX, wasted bandwidth | 2-3 hours (fetch limits from backend) |
 | A04-003 | No negative number validation | Bypass deposit/trade limits | 1 hour |
 | A04-004 | No duplicate click protection | Race conditions, duplicate trades | 1-2 hours |
 | A05-002 | Environment variables in bundle | Information disclosure (low impact) | 0.5 hours (documentation) |
@@ -1525,7 +1565,9 @@ root.render(
 | A09-001 | Sensitive data in console logs | Information disclosure | 2 hours |
 | A09-002 | No error tracking | Poor observability | 1-2 hours |
 
-**Estimated Total Effort: 8-11 hours**
+**Estimated Total Effort: 10-14 hours**
+
+**Note:** A04-001 requires backend A04-002 to be implemented first (provides /config/limits endpoint).
 
 ### 3.3 Nice to Have (LOW Priority)
 

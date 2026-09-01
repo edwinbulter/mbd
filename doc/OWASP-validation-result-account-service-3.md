@@ -17,17 +17,17 @@ This report documents the security posture of the account-service after implemen
 | Priority | Total Findings | Fixed | Remaining | Status |
 |----------|---------------|-------|-----------|--------|
 | **CRITICAL** | 5 | 5 | 0 | ✅ **RESOLVED** |
-| **HIGH** | 5 | 5 | 0 | ✅ **RESOLVED** |
-| **MEDIUM** | 5 | 0 | 5 | ⚠️ **NOT ADDRESSED** |
+| **HIGH** | 6 | 5 | 1 | 🟡 **PARTIAL** |
+| **MEDIUM** | 4 | 0 | 4 | ⚠️ **NOT ADDRESSED** |
 | **LOW** | 1 | 0 | 1 | ⚠️ **NOT ADDRESSED** |
-| **TOTAL** | 16 | 10 | 6 | 63% Complete |
+| **TOTAL** | 17 | 10 | 7 | 59% Complete |
 
 ### Risk Assessment
 
 **Previous Risk Level (v2):** 🟡 **MEDIUM** (0 CRITICAL, 1 HIGH, 5 MEDIUM, 1 LOW findings)
-**Current Risk Level:** 🟢 **LOW** (0 CRITICAL, 0 HIGH, 5 MEDIUM, 1 LOW findings)
+**Current Risk Level:** 🟡 **MEDIUM** (0 CRITICAL, 1 HIGH, 4 MEDIUM, 1 LOW findings)
 
-**Security Improvement:** 📈 **Excellent** - All critical and high-severity vulnerabilities have been fully remediated. The service now implements defense-in-depth security controls at both application and infrastructure levels.
+**Security Improvement:** 📈 **Significant** - All critical vulnerabilities and most high-severity vulnerabilities have been remediated. One HIGH priority finding remains: missing backend validation for deposit/trade limits. The service implements defense-in-depth security controls at both application and infrastructure levels.
 
 ### Key Improvements in This Release
 
@@ -460,6 +460,243 @@ This implements a **defense-in-depth** security model:
 
 ---
 
+### A04:2025 – Insecure Design
+
+**Status:** 🔴 **FAIL** (1 HIGH finding identified in v3.1)
+
+#### 🔴 A04-002: No Backend Validation for Deposit/Trade Limits (HIGH) - **NOT FIXED** 🆕
+
+**File:** `AccountController.kt:50-92`, `PortfolioController.kt` (trade endpoints)
+**Severity:** HIGH
+**CWE:** CWE-20 (Improper Input Validation)
+
+**Re-Classification Notice:**
+
+This finding was originally classified as MEDIUM in version 2 with the rationale that "frontend already enforces reasonable limits." However, this classification was **incorrect** based on the fundamental security principle: **Never trust the client**.
+
+**Why This is HIGH (Not MEDIUM):**
+
+1. **Frontend validation is UX, not security** - Users can bypass browser validation via:
+   - Browser DevTools (disable JavaScript)
+   - Direct API calls (curl, Postman, custom scripts)
+   - Modified HTTP requests (Burp Suite, mitmproxy)
+
+2. **Backend is the only enforceable security control** - All other layers can be bypassed
+
+3. **Real-world attack vectors:**
+   - Money laundering: Deposit €999 billion to bypass detection thresholds
+   - Regulatory violation: Bypass KYC/AML reporting requirements (e.g., €10,000 limit)
+   - Market manipulation: Buy 1 billion shares to artificially inflate demand
+   - System abuse: Trigger race conditions with massive transactions
+
+**Current Implementation:**
+
+**Deposit Endpoint - No Maximum Validation:**
+```kotlin
+// AccountController.kt:50-92
+@PostMapping("/{accountId}/deposit")
+fun deposit(
+    @PathVariable accountId: Long,
+    @RequestBody request: DepositDto,
+    @RequestHeader(value = "Authorization", required = false) authHeader: String?
+): ResponseEntity<AccountDto> {
+    // ... authentication and authorization ...
+
+    // ❌ Only validates amount is not zero
+    if (request.amount.compareTo(BigDecimal.ZERO) == 0) {
+        throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Amount cannot be zero")
+    }
+
+    // ❌ No maximum limit check!
+    // User can deposit: €999,999,999,999 (1 trillion euros)
+
+    account.balance = account.balance.add(request.amount)
+    // ...
+}
+```
+
+**Trade Endpoint - No Maximum Validation:**
+```kotlin
+// PortfolioController.kt (similar issue)
+@PostMapping("/trade")
+fun executeTrade(@RequestBody request: TradeDto): ResponseEntity<PortfolioDto> {
+    // ❌ No validation on request.quantity
+    // User can buy 999,999,999 shares in a single trade
+}
+```
+
+**Attack Scenario:**
+
+```bash
+# Attacker bypasses frontend entirely
+curl -X POST https://customer.mbd.local/api/accounts/1/deposit \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"amount": 999999999999}'
+
+# Backend accepts it!
+# Response: {"id": 1, "balance": 999999999999.00, ...}
+
+# Attacker now has €1 trillion in fake deposits
+# Can be used for:
+# - Money laundering (bypass €10,000 reporting threshold)
+# - Market manipulation (massive buy orders)
+# - Fraud (inflate account values)
+```
+
+**Recommended Fix:**
+
+**1. Add Backend Validation Constants:**
+```kotlin
+// AccountController.kt
+companion object {
+    private val MAX_DEPOSIT_AMOUNT = BigDecimal("100000.00") // €100,000 per transaction
+    private val MAX_WITHDRAWAL_AMOUNT = BigDecimal("50000.00") // €50,000 per transaction
+    private val MIN_DEPOSIT_AMOUNT = BigDecimal("0.01") // Minimum €0.01
+}
+```
+
+**2. Enforce Limits in Deposit Endpoint:**
+```kotlin
+@PostMapping("/{accountId}/deposit")
+fun deposit(
+    @PathVariable accountId: Long,
+    @RequestBody request: DepositDto,
+    @RequestHeader(value = "Authorization", required = false) authHeader: String?
+): ResponseEntity<AccountDto> {
+    // ... authentication and authorization ...
+
+    // ✅ Validate minimum amount
+    if (request.amount < MIN_DEPOSIT_AMOUNT) {
+        throw ResponseStatusException(
+            HttpStatus.BAD_REQUEST,
+            "Deposit amount must be at least €${MIN_DEPOSIT_AMOUNT}"
+        )
+    }
+
+    // ✅ Validate maximum amount
+    if (request.amount > MAX_DEPOSIT_AMOUNT) {
+        throw ResponseStatusException(
+            HttpStatus.BAD_REQUEST,
+            "Deposit amount exceeds maximum limit of €${MAX_DEPOSIT_AMOUNT}"
+        )
+    }
+
+    // ✅ Validate positive for deposits, negative for withdrawals
+    if (request.amount.compareTo(BigDecimal.ZERO) == 0) {
+        throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Amount cannot be zero")
+    }
+
+    account.balance = account.balance.add(request.amount)
+    // ...
+}
+```
+
+**3. Add Configuration Endpoint (Best Practice):**
+
+Instead of hardcoding limits, expose them via API so frontend can fetch them:
+
+```kotlin
+@GetMapping("/config/limits")
+fun getLimits(): ResponseEntity<Map<String, BigDecimal>> {
+    return ResponseEntity.ok(mapOf(
+        "maxDepositAmount" to MAX_DEPOSIT_AMOUNT,
+        "maxWithdrawalAmount" to MAX_WITHDRAWAL_AMOUNT,
+        "minDepositAmount" to MIN_DEPOSIT_AMOUNT,
+        "maxTradeQuantity" to BigDecimal("10000") // 10,000 shares max per trade
+    ))
+}
+```
+
+**4. Apply Same Validation to Portfolio Trades:**
+
+```kotlin
+// PortfolioController.kt
+companion object {
+    private val MAX_TRADE_QUANTITY = BigDecimal("10000.00") // 10,000 shares max
+    private val MIN_TRADE_QUANTITY = BigDecimal("0.01") // 0.01 shares min
+}
+
+@PostMapping("/trade")
+fun executeTrade(@RequestBody request: TradeDto, @RequestHeader("Authorization") authHeader: String): ResponseEntity<PortfolioDto> {
+    // ✅ Validate trade quantity
+    if (request.quantity < MIN_TRADE_QUANTITY || request.quantity > MAX_TRADE_QUANTITY) {
+        throw ResponseStatusException(
+            HttpStatus.BAD_REQUEST,
+            "Trade quantity must be between ${MIN_TRADE_QUANTITY} and ${MAX_TRADE_QUANTITY}"
+        )
+    }
+    // ... rest of trade logic ...
+}
+```
+
+**Frontend Integration (Defense-in-Depth):**
+
+Frontend should fetch limits from backend and validate for UX:
+
+```typescript
+// frontend/customer-frontend/src/services/customerApi.ts
+export const customerApi = {
+  getLimits: () => api.get('/api/accounts/config/limits'),
+  // ... other methods
+}
+
+// Dashboard.tsx
+const [limits, setLimits] = useState(null)
+
+useEffect(() => {
+  const fetchLimits = async () => {
+    const res = await customerApi.getLimits()
+    setLimits(res.data)
+  }
+  fetchLimits()
+}, [])
+
+const handleDeposit = async () => {
+  const amount = parseFloat(depositAmount)
+
+  // Frontend validation for UX (not security!)
+  if (limits && amount > limits.maxDepositAmount) {
+    setError(`Maximum deposit is €${limits.maxDepositAmount.toLocaleString()}`)
+    return
+  }
+
+  try {
+    await customerApi.deposit(account.id, amount)
+  } catch (error) {
+    // Backend validation failed (real security control)
+    setError(error.response.data.message)
+  }
+}
+```
+
+**Why This Approach is Correct:**
+
+1. ✅ **Backend enforces security** - Cannot be bypassed
+2. ✅ **Single source of truth** - Limits defined in backend, fetched by frontend
+3. ✅ **Defense-in-depth** - Frontend validates for UX, backend validates for security
+4. ✅ **Flexible configuration** - Limits can be changed without redeploying frontend
+5. ✅ **Regulatory compliance** - Backend can enforce AML/KYC thresholds
+
+**Regulatory Context:**
+
+Financial regulations require transaction limits and reporting:
+- **EU AML Directive**: Report cash transactions >€10,000
+- **PSD2**: Strong Customer Authentication for >€500
+- **KYC Requirements**: Enhanced due diligence for large transactions
+
+Without backend limits, the application **cannot comply** with these regulations.
+
+**Status:** 🔴 **NOT IMPLEMENTED** - Critical for production deployment
+
+**Estimated Effort:** 2-4 hours
+- 1 hour: Add validation to AccountController
+- 1 hour: Add validation to PortfolioController
+- 1 hour: Add configuration endpoint
+- 1 hour: Update frontend to fetch limits
+
+---
+
 ## 4. Overall Security Posture
 
 ### 4.1 OWASP Top 10 2025 Compliance
@@ -531,14 +768,22 @@ This implements a **defense-in-depth** security model:
 
 ### 5.1 HIGH Priority (Requires Action)
 
-**None** - All HIGH priority findings have been resolved ✅
+| ID | Category | Issue | Recommendation |
+|----|----------|-------|----------------|
+| A04-002 | Input Validation | No backend validation for deposit/trade limits | Implement MAX_DEPOSIT_AMOUNT and MAX_TRADE_QUANTITY validation + configuration endpoint |
+
+**⚠️ IMPORTANT:** This finding was incorrectly classified as MEDIUM in version 2. It has been re-evaluated to HIGH priority because:
+- **Backend validation is the actual security control** (frontend validation is UX only)
+- Users can bypass frontend validation via browser DevTools or direct API calls
+- Enables money laundering (€999 billion deposits bypass detection thresholds)
+- Violates regulatory compliance (KYC/AML reporting requirements)
+- Allows market manipulation through massive trades
 
 ### 5.2 MEDIUM Priority (Should Address in Future)
 
 | ID | Category | Issue | Recommendation | Risk Level |
 |----|----------|-------|----------------|------------|
 | A04-001 | Insecure Design | No optimistic locking | Add `@Version` field to Account entity | MEDIUM |
-| A04-002 | Input Validation | No maximum deposit limit | Add MAX_DEPOSIT_AMOUNT constant | MEDIUM |
 | A10-001 | Error Handling | Validation errors expose field names | Generic error messages for validation | MEDIUM |
 
 ### 5.3 LOW Priority (Nice to Have)
@@ -552,7 +797,6 @@ This implements a **defense-in-depth** security model:
 
 The remaining MEDIUM and LOW findings do not pose immediate security risks:
 - **A04-001 (Optimistic Locking)**: Race conditions are unlikely in demo/dev environments with low concurrency
-- **A04-002 (Deposit Limits)**: Frontend already enforces reasonable limits; backend limit is defense-in-depth
 - **A10-001 (Error Messages)**: Generic error handler already prevents most information disclosure
 - **A10-002 (Exception Logging)**: Already implemented in GlobalExceptionHandler with SLF4J
 - **Audit Logging**: Infrastructure-level logging via Istio access logs provides audit trail

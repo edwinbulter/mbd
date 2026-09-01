@@ -19,6 +19,11 @@ export default function Funds() {
   const [quantity, setQuantity] = useState('1')
   const [buying, setBuying] = useState(false)
   const [message, setMessage] = useState({ text: '', type: '' })
+  const [buyError, setBuyError] = useState('')
+  const [tradeLimits, setTradeLimits] = useState<{
+    maxTradeQuantity: number
+    minTradeQuantity: number
+  } | null>(null)
 
   useEffect(() => {
     const initPage = async () => {
@@ -32,6 +37,10 @@ export default function Funds() {
         if (accountsRes.data && accountsRes.data.length > 0) {
           setAccount(accountsRes.data[0])
         }
+
+        // Fetch trade limits for client-side validation (UX only, not security)
+        const limitsRes = await customerApi.getTradeLimits()
+        setTradeLimits(limitsRes.data)
       } catch (error) {
         console.error('Failed to initialize funds page', error)
       } finally {
@@ -42,20 +51,38 @@ export default function Funds() {
   }, [])
 
   const handleBuy = async () => {
-    if (!account || !selectedFund) return
+    if (!account || !selectedFund || !tradeLimits) return
+
+    const qty = parseFloat(quantity)
+
+    // Client-side validation for UX (backend enforces security)
+    if (qty < tradeLimits.minTradeQuantity) {
+      setBuyError(`Trade quantity must be at least ${tradeLimits.minTradeQuantity}`)
+      return
+    }
+    if (qty > tradeLimits.maxTradeQuantity) {
+      setBuyError(`Trade quantity exceeds maximum limit of ${tradeLimits.maxTradeQuantity.toLocaleString()}`)
+      return
+    }
+
     try {
       setBuying(true)
+      setBuyError('')
       await customerApi.buyFund({
         accountId: account.id,
         fundId: selectedFund.id,
-        quantity: parseFloat(quantity),
+        quantity: qty,
         price: selectedFund.currentPrice
       })
       setMessage({ text: `Successfully bought ${quantity} shares of ${selectedFund.name}!`, type: 'success' })
       setSelectedFund(null)
+      setQuantity('1')
       setTimeout(() => navigate('/'), 2000)
     } catch (error: any) {
-      setMessage({ text: error.response?.data?.message || 'Transaction failed.', type: 'error' })
+      // Backend validation failed (real security control)
+      const errorMsg = error.response?.data?.message || 'Transaction failed.'
+      setMessage({ text: errorMsg, type: 'error' })
+      setBuyError(errorMsg)
     } finally {
       setBuying(false)
     }
@@ -127,25 +154,40 @@ export default function Funds() {
               <input
                 type="number"
                 step="0.01"
-                min="0.01"
+                min={tradeLimits?.minTradeQuantity || 0.01}
+                max={tradeLimits?.maxTradeQuantity || 10000}
                 value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
+                onChange={(e) => {
+                  setQuantity(e.target.value)
+                  setBuyError('')
+                }}
                 className="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xl font-semibold"
               />
+              {tradeLimits && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Limits: {tradeLimits.minTradeQuantity} - {tradeLimits.maxTradeQuantity.toLocaleString()} shares
+                </p>
+              )}
               <p className="mt-2 text-sm text-gray-500">
                 Total Cost: <span className="font-bold text-gray-900">€{(parseFloat(quantity) * selectedFund.currentPrice).toFixed(2)}</span>
               </p>
+              {buyError && (
+                <p className="mt-2 text-sm text-red-600 font-semibold">{buyError}</p>
+              )}
             </div>
             <div className="flex space-x-4">
               <button
                 onClick={handleBuy}
-                disabled={buying || parseFloat(quantity) <= 0}
+                disabled={buying || !tradeLimits || parseFloat(quantity) <= 0}
                 className="flex-1 bg-blue-600 text-white py-2 rounded font-semibold hover:bg-blue-700 transition disabled:opacity-50"
               >
                 {buying ? 'Processing...' : 'Confirm Purchase'}
               </button>
               <button
-                onClick={() => setSelectedFund(null)}
+                onClick={() => {
+                  setSelectedFund(null)
+                  setBuyError('')
+                }}
                 className="flex-1 bg-gray-200 text-gray-700 py-2 rounded font-semibold hover:bg-gray-300 transition"
               >
                 Cancel

@@ -23,6 +23,13 @@ class AccountController(
     private val transactionRepository: TransactionRepository,
     private val userClient: UserClient
 ) {
+    companion object {
+        // Transaction limits per operation (regulatory compliance: AML/PSD2)
+        private val MAX_DEPOSIT_AMOUNT = BigDecimal("100000.00") // €100,000 per transaction
+        private val MAX_WITHDRAWAL_AMOUNT = BigDecimal("50000.00") // €50,000 per transaction
+        private val MIN_DEPOSIT_AMOUNT = BigDecimal("0.01") // Minimum €0.01
+        private val MIN_WITHDRAWAL_AMOUNT = BigDecimal("0.01") // Minimum €0.01
+    }
     @PostMapping
     fun createAccount(@RequestBody request: CreateAccountDto, @RequestHeader("Authorization") authHeader: String): ResponseEntity<AccountDto> {
         // Validate user exists and get authenticated user
@@ -68,6 +75,38 @@ class AccountController(
         // Validate amount is not zero
         if (request.amount.compareTo(BigDecimal.ZERO) == 0) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Amount cannot be zero")
+        }
+
+        // Validate deposit/withdrawal limits (regulatory compliance)
+        if (request.amount > BigDecimal.ZERO) {
+            // Deposit validation
+            if (request.amount < MIN_DEPOSIT_AMOUNT) {
+                throw ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Deposit amount must be at least €${MIN_DEPOSIT_AMOUNT}"
+                )
+            }
+            if (request.amount > MAX_DEPOSIT_AMOUNT) {
+                throw ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Deposit amount exceeds maximum limit of €${MAX_DEPOSIT_AMOUNT.toPlainString()}"
+                )
+            }
+        } else {
+            // Withdrawal validation (negative amount)
+            val withdrawalAmount = request.amount.abs()
+            if (withdrawalAmount < MIN_WITHDRAWAL_AMOUNT) {
+                throw ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Withdrawal amount must be at least €${MIN_WITHDRAWAL_AMOUNT}"
+                )
+            }
+            if (withdrawalAmount > MAX_WITHDRAWAL_AMOUNT) {
+                throw ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Withdrawal amount exceeds maximum limit of €${MAX_WITHDRAWAL_AMOUNT.toPlainString()}"
+                )
+            }
         }
 
         // Update balance
@@ -150,7 +189,17 @@ class AccountController(
         val transactions = transactionRepository.findByAccountId(accountId)
         return ResponseEntity.ok(transactions)
     }
-    
+
+    @GetMapping("/config/limits")
+    fun getLimits(): ResponseEntity<Map<String, BigDecimal>> {
+        return ResponseEntity.ok(mapOf(
+            "maxDepositAmount" to MAX_DEPOSIT_AMOUNT,
+            "maxWithdrawalAmount" to MAX_WITHDRAWAL_AMOUNT,
+            "minDepositAmount" to MIN_DEPOSIT_AMOUNT,
+            "minWithdrawalAmount" to MIN_WITHDRAWAL_AMOUNT
+        ))
+    }
+
     private fun toDto(account: Account): AccountDto {
         return AccountDto(
             id = account.id,

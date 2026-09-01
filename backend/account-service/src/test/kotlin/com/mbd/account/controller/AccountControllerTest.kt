@@ -82,12 +82,34 @@ class AccountControllerTest {
     }
 
     @Test
-    fun `deposit negative amount throws bad request`() {
+    fun `deposit exceeding maximum limit throws bad request`() {
         whenever(userClient.getUserProfile("Bearer token")).thenReturn(user)
         whenever(accountRepository.findById(1)).thenReturn(Optional.of(account))
 
         assertThrows(org.springframework.web.server.ResponseStatusException::class.java) {
-            controller.deposit(1, DepositDto(BigDecimal("-300.00")), "Bearer token")
+            controller.deposit(1, DepositDto(BigDecimal("200000.00")), "Bearer token")
+        }
+        verify(transactionRepository, never()).save(any())
+    }
+
+    @Test
+    fun `withdrawal exceeding maximum limit throws bad request`() {
+        whenever(userClient.getUserProfile("Bearer token")).thenReturn(user)
+        whenever(accountRepository.findById(1)).thenReturn(Optional.of(account))
+
+        assertThrows(org.springframework.web.server.ResponseStatusException::class.java) {
+            controller.deposit(1, DepositDto(BigDecimal("-100000.00")), "Bearer token")
+        }
+        verify(transactionRepository, never()).save(any())
+    }
+
+    @Test
+    fun `deposit below minimum limit throws bad request`() {
+        whenever(userClient.getUserProfile("Bearer token")).thenReturn(user)
+        whenever(accountRepository.findById(1)).thenReturn(Optional.of(account))
+
+        assertThrows(org.springframework.web.server.ResponseStatusException::class.java) {
+            controller.deposit(1, DepositDto(BigDecimal("0.001")), "Bearer token")
         }
         verify(transactionRepository, never()).save(any())
     }
