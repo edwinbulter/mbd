@@ -23,6 +23,7 @@ Deze manifests worden uitgerold door de `mbd-istio` ArgoCD-applicatie (`infrastr
 | `destination-rules.yaml` | Vertelt clients om `ISTIO_MUTUAL` TLS te gebruiken bij aanroepen van services in `mbd`, `mbd-infra` en de cross-namespace PostgreSQL. |
 | `request-authentication.yaml` | Valideert Keycloak-JWT's voor alle pods in `mbd`. |
 | `authorization-policy.yaml` | ALLOW-policies die bepalen wie `/api/*` en `/api/admin/*` mag aanroepen, en de frontends publiek toegankelijk maken. |
+| `rate-limiting.yaml` | Per-gebruiker rate limiting met EnvoyFilter om DoS-aanvallen en API-misbruik te voorkomen. |
 
 ---
 
