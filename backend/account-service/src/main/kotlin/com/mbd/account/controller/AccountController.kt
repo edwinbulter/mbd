@@ -25,10 +25,10 @@ class AccountController(
 ) {
     companion object {
         // Transaction limits per operation (regulatory compliance: AML/PSD2)
-        private val MAX_DEPOSIT_AMOUNT = BigDecimal("100000.00") // €100,000 per transaction
-        private val MAX_WITHDRAWAL_AMOUNT = BigDecimal("50000.00") // €50,000 per transaction
-        private val MIN_DEPOSIT_AMOUNT = BigDecimal("0.01") // Minimum €0.01
-        private val MIN_WITHDRAWAL_AMOUNT = BigDecimal("0.01") // Minimum €0.01
+        private val MAX_DEPOSIT_AMOUNT = BigDecimal("10000.00") // €10,000 per transaction (AML reporting threshold)
+        private val MAX_WITHDRAWAL_AMOUNT = BigDecimal("5000.00") // €5,000 per transaction
+        private val MIN_DEPOSIT_AMOUNT = BigDecimal("10.00") // Minimum €10
+        private val MIN_WITHDRAWAL_AMOUNT = BigDecimal("10.00") // Minimum €10
     }
     @PostMapping
     fun createAccount(@RequestBody request: CreateAccountDto, @RequestHeader("Authorization") authHeader: String): ResponseEntity<AccountDto> {

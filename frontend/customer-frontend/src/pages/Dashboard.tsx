@@ -12,7 +12,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [creatingAccount, setCreatingAccount] = useState(false)
   const [showDeposit, setShowDeposit] = useState(false)
-  const [depositAmount, setDepositAmount] = useState('1000')
+  const [depositAmount, setDepositAmount] = useState('100')
   const [sellHolding, setSellHolding] = useState<any>(null)
   const [sellQuantity, setSellQuantity] = useState('1')
   const [selling, setSelling] = useState(false)
@@ -115,7 +115,7 @@ export default function Dashboard() {
       setDepositError('')
       await customerApi.deposit(account.id, amount)
       setShowDeposit(false)
-      setDepositAmount('1000')
+      setDepositAmount('100')
       await initDashboard()
     } catch (error: any) {
       // Backend validation failed (real security control)
@@ -183,9 +183,9 @@ export default function Dashboard() {
                   setDepositAmount(e.target.value)
                   setDepositError('')
                 }}
-                min={accountLimits?.minDepositAmount || 0.01}
-                max={accountLimits?.maxDepositAmount || 100000}
-                step="0.01"
+                min={accountLimits?.minDepositAmount || 10}
+                max={accountLimits?.maxDepositAmount || 10000}
+                step="10"
                 className="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-2xl font-bold"
               />
               {accountLimits && (

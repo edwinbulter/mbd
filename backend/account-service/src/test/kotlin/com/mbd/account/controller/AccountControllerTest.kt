@@ -87,7 +87,7 @@ class AccountControllerTest {
         whenever(accountRepository.findById(1)).thenReturn(Optional.of(account))
 
         assertThrows(org.springframework.web.server.ResponseStatusException::class.java) {
-            controller.deposit(1, DepositDto(BigDecimal("200000.00")), "Bearer token")
+            controller.deposit(1, DepositDto(BigDecimal("15000.00")), "Bearer token")
         }
         verify(transactionRepository, never()).save(any())
     }
@@ -98,7 +98,7 @@ class AccountControllerTest {
         whenever(accountRepository.findById(1)).thenReturn(Optional.of(account))
 
         assertThrows(org.springframework.web.server.ResponseStatusException::class.java) {
-            controller.deposit(1, DepositDto(BigDecimal("-100000.00")), "Bearer token")
+            controller.deposit(1, DepositDto(BigDecimal("-10000.00")), "Bearer token")
         }
         verify(transactionRepository, never()).save(any())
     }
@@ -109,7 +109,7 @@ class AccountControllerTest {
         whenever(accountRepository.findById(1)).thenReturn(Optional.of(account))
 
         assertThrows(org.springframework.web.server.ResponseStatusException::class.java) {
-            controller.deposit(1, DepositDto(BigDecimal("0.001")), "Bearer token")
+            controller.deposit(1, DepositDto(BigDecimal("5.00")), "Bearer token")
         }
         verify(transactionRepository, never()).save(any())
     }
