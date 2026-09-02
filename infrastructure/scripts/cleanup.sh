@@ -33,6 +33,11 @@ check_requirements() {
         exit 1
     fi
 
+    if ! command -v jq &> /dev/null; then
+        print_error "jq not found. Please install jq (brew install jq)."
+        exit 1
+    fi
+
     if ! command -v istioctl &> /dev/null; then
         print_warn "istioctl not found. Istio uninstall will be skipped."
     fi
@@ -76,9 +81,36 @@ delete_argocd() {
 
         # Wait for ArgoCD to be removed
         print_info "Waiting for ArgoCD namespace to terminate..."
+
+        local wait_count=0
+        local max_wait=30  # Wait 30 iterations (60 seconds) before forcing
+
         while kubectl get namespace argocd &> /dev/null; do
             echo -n "."
             sleep 2
+            wait_count=$((wait_count + 1))
+
+            # After 60 seconds, check if stuck in Terminating and force delete
+            if [ $wait_count -eq $max_wait ]; then
+                local ns_status=$(kubectl get namespace argocd -o jsonpath='{.status.phase}' 2>/dev/null || echo "")
+
+                if [ "$ns_status" = "Terminating" ]; then
+                    echo ""
+                    print_warn "Namespace stuck in Terminating state, removing finalizers..."
+
+                    # Remove ArgoCD application finalizers if they exist
+                    kubectl get applications -n argocd -o name 2>/dev/null | while read app; do
+                        kubectl patch $app -n argocd -p '{"metadata":{"finalizers":[]}}' --type merge 2>/dev/null || true
+                    done
+
+                    # Remove namespace finalizers
+                    kubectl get namespace argocd -o json | \
+                        jq '.spec.finalizers = []' | \
+                        kubectl replace --raw /api/v1/namespaces/argocd/finalize -f - &> /dev/null || true
+
+                    print_info "Finalizers removed, continuing..."
+                fi
+            fi
         done
         echo ""
         print_info "ArgoCD namespace deleted."
@@ -104,9 +136,36 @@ delete_namespaces() {
 
     # Wait for namespaces to terminate
     print_info "Waiting for namespaces to terminate..."
+
+    local wait_count=0
+    local max_wait=30  # Wait 30 iterations (60 seconds) before forcing
+
     while kubectl get namespace mbd mbd-infra istio-system cert-manager &> /dev/null; do
         echo -n "."
         sleep 2
+        wait_count=$((wait_count + 1))
+
+        # After 60 seconds, check for stuck namespaces and force delete
+        if [ $wait_count -eq $max_wait ]; then
+            echo ""
+            for ns in "${NAMESPACES[@]}"; do
+                if kubectl get namespace "$ns" &> /dev/null 2>&1; then
+                    local ns_status=$(kubectl get namespace "$ns" -o jsonpath='{.status.phase}' 2>/dev/null || echo "")
+
+                    if [ "$ns_status" = "Terminating" ]; then
+                        print_warn "Namespace $ns stuck in Terminating state, removing finalizers..."
+
+                        # Remove namespace finalizers
+                        kubectl get namespace "$ns" -o json | \
+                            jq '.spec.finalizers = []' | \
+                            kubectl replace --raw /api/v1/namespaces/$ns/finalize -f - &> /dev/null || true
+
+                        print_info "Finalizers removed from $ns"
+                    fi
+                fi
+            done
+            wait_count=0  # Reset counter to check again if needed
+        fi
     done
     echo ""
     print_info "All namespaces deleted."
