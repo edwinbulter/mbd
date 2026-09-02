@@ -2,6 +2,22 @@
 
 This guide describes how to clean up all MBD infrastructure components while preserving the Kind cluster itself. After cleanup, you can redeploy from scratch starting at step 3 of [00-bootstrap-cluster.md](00-bootstrap-cluster.md).
 
+## Quick Start
+
+**Recommended**: Use the automated cleanup script instead of following the manual steps:
+
+```bash
+./infrastructure/scripts/cleanup.sh
+```
+
+The script provides:
+- Interactive confirmation prompt
+- Colored progress output
+- Automatic verification
+- Next steps guidance
+
+For manual cleanup or troubleshooting, continue reading the sections below.
+
 ---
 
 ## What Gets Deleted
