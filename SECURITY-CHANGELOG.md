@@ -52,8 +52,8 @@ This document tracks all security vulnerabilities discovered and remediated in t
 - `98383e5` - Updated customer-frontend OWASP report
 
 **Detailed Reports:**
-- [account-service v3 (search for "A04-002")](doc/OWASP-validation-result-account-service-3.md)
-- [customer-frontend (search for "A04-001")](doc/OWASP-validation-result-customer-frontend.md)
+- [account-service v3 (search for "A04-002")](doc/OWASP%20validation/account-service/OWASP-validation-result-account-service-3.md)
+- [customer-frontend (search for "A04-001")](doc/OWASP%20validation/customer-frontend/OWASP-validation-result-customer-frontend.md)
 
 ---
 
@@ -104,7 +104,7 @@ This document tracks all security vulnerabilities discovered and remediated in t
 
 **Detailed Reports:**
 - [Rate Limiting Documentation](doc/techstack/istio-rate-limiting.md)
-- [account-service v3 (search for "A07-001")](doc/OWASP-validation-result-account-service-3.md)
+- [account-service v3 (search for "A07-001")](doc/OWASP%20validation/account-service/OWASP-validation-result-account-service-3.md)
 
 ---
 
@@ -199,8 +199,8 @@ secureRandom.nextBytes(randomBytes)
 - [Link to v2 commits]
 
 **Detailed Reports:**
-- [account-service v2](doc/OWASP-validation-result-account-service-2.md)
-- [account-service v1 (initial assessment)](doc/OWASP-validation-result-account-service-1.md)
+- [account-service v2](doc/OWASP%20validation/account-service/OWASP-validation-result-account-service-2.md)
+- [account-service v1 (initial assessment)](doc/OWASP%20validation/account-service/OWASP-validation-result-account-service-1.md)
 
 ---
 
@@ -287,10 +287,10 @@ The following findings remain unresolved but do not pose immediate security risk
 ## References
 
 ### OWASP Validation Reports
-- [account-service v3 (Final)](doc/OWASP-validation-result-account-service-3.md) - 2026-09-01
-- [account-service v2](doc/OWASP-validation-result-account-service-2.md) - 2026-08-30
-- [account-service v1 (Initial)](doc/OWASP-validation-result-account-service-1.md)
-- [customer-frontend](doc/OWASP-validation-result-customer-frontend.md) - 2026-09-01
+- [account-service v3 (Final)](doc/OWASP%20validation/account-service/OWASP-validation-result-account-service-3.md) - 2026-09-01
+- [account-service v2](doc/OWASP%20validation/account-service/OWASP-validation-result-account-service-2.md) - 2026-08-30
+- [account-service v1 (Initial)](doc/OWASP%20validation/account-service/OWASP-validation-result-account-service-1.md)
+- [customer-frontend](doc/OWASP%20validation/customer-frontend/OWASP-validation-result-customer-frontend.md) - 2026-09-01
 
 ### Technical Documentation
 - [Istio Rate Limiting](doc/techstack/istio-rate-limiting.md)

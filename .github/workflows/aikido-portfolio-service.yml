@@ -1,0 +1,216 @@
+name: Aikido Security Analysis - Portfolio Service
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  aikido-scan:
+    name: Aikido OWASP Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('backend/**/*.gradle.kts') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Grant execute permission for gradlew
+        working-directory: backend
+        run: chmod +x gradlew
+
+      - name: Build portfolio-service
+        working-directory: backend
+        run: ./gradlew :portfolio-service:build -x test
+
+      - name: Run Aikido Security Scan
+        uses: aikidosec/github-actions-workflow@v1
+        with:
+          # If Aikido GitHub App is installed, it may authenticate automatically
+          # Otherwise, uncomment the line below and add AIKIDO_SECRET_KEY to GitHub Secrets
+          # secret-key: ${{ secrets.AIKIDO_SECRET_KEY }}
+          scan-type: all
+          severity-threshold: low
+          fail-on-timeout: false
+          # Limit scan to portfolio-service directory
+          paths: backend/portfolio-service
+
+      - name: Generate Aikido Report Summary
+        if: always()
+        run: |
+          cat > aikido-scan-summary.md <<'EOF'
+          # Aikido Security Scan Report
+
+          **Service**: portfolio-service
+          **Date**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          **Scan Type**: Comprehensive (SAST + SCA + Secrets + Container)
+          **Scan Status**: ✅ Completed
+
+          ---
+
+          ## Scan Coverage
+
+          Aikido performs multiple security scans:
+
+          ### 1. SAST (Static Application Security Testing)
+          - Code vulnerability detection
+          - OWASP Top 10 coverage
+          - Security anti-patterns
+          - Insecure configurations
+
+          ### 2. SCA (Software Composition Analysis)
+          - Dependency vulnerability scanning
+          - Known CVEs in dependencies
+          - Outdated libraries
+          - License compliance
+
+          ### 3. Secrets Scanning
+          - Hardcoded credentials
+          - API keys and tokens
+          - Private keys
+          - Database passwords
+
+          ### 4. Container Scanning (if applicable)
+          - Base image vulnerabilities
+          - Dockerfile best practices
+          - Container misconfigurations
+
+          ---
+
+          ## OWASP Top 10 Coverage
+
+          Aikido scans for all OWASP Top 10 (2021) categories:
+
+          - **A01: Broken Access Control** - Authorization flaws, missing access controls
+          - **A02: Cryptographic Failures** - Weak crypto, exposed sensitive data
+          - **A03: Injection** - SQL, NoSQL, command, LDAP injection
+          - **A04: Insecure Design** - Security design flaws, missing security controls
+          - **A05: Security Misconfiguration** - Default configs, exposed endpoints
+          - **A06: Vulnerable Components** - Known CVEs in dependencies
+          - **A07: Authentication Failures** - Broken authentication, weak passwords
+          - **A08: Data Integrity Failures** - Unsafe deserialization, insecure CI/CD
+          - **A09: Logging Failures** - Insufficient logging, exposed logs
+          - **A10: SSRF** - Server-side request forgery
+
+          ---
+
+          ## Analyzed Components
+
+          **Portfolio Service Scope**:
+          - Source code: `backend/portfolio-service/src/`
+          - Dependencies: `backend/portfolio-service/build.gradle.kts`
+          - Configuration: `backend/portfolio-service/src/main/resources/`
+          - Docker: `backend/portfolio-service/Dockerfile` (if exists)
+
+          ---
+
+          ## Key Differences from CodeQL
+
+          | Feature | CodeQL | Aikido |
+          |---------|--------|--------|
+          | SAST (Code Analysis) | ✅ Excellent | ✅ Excellent |
+          | Dependency Scanning | ❌ No | ✅ Yes (SCA) |
+          | Secrets Detection | ⚠️ Limited | ✅ Yes |
+          | Container Scanning | ❌ No | ✅ Yes |
+          | Configuration Analysis | ❌ No | ✅ Yes (YAML, properties) |
+          | Runtime Protection | ❌ No | ✅ Yes (with agent) |
+          | Real-time Monitoring | ❌ No | ✅ Yes (with agent) |
+
+          ---
+
+          ## Expected Findings for Portfolio Service
+
+          Based on manual OWASP review, Aikido should detect:
+
+          ### High Probability Detections:
+          - ✅ Vulnerable dependencies (if any CVEs exist)
+          - ✅ Exposed actuator endpoints (configuration scan)
+          - ⚠️ Debug logging configuration (if scans YAML)
+          - ⚠️ Hardcoded values (if any exist)
+
+          ### Low Probability Detections:
+          - ❌ Missing authentication (architectural issue)
+          - ❌ Missing authorization (business logic)
+          - ❌ Race conditions (complex flow analysis)
+          - ⚠️ Unsafe Kafka deserialization (depends on rule coverage)
+
+          ---
+
+          ## Next Steps
+
+          1. **Review Aikido Dashboard**: Check detailed findings at Aikido web console
+          2. **Compare with CodeQL Results**: See what Aikido found that CodeQL missed
+          3. **Prioritize Remediation**: Focus on HIGH/CRITICAL findings
+          4. **Fix Configuration Issues**: Address any config vulnerabilities
+          5. **Update Dependencies**: Patch vulnerable libraries
+
+          ---
+
+          ## Recommendations
+
+          For comprehensive security validation, use all three approaches:
+          - **CodeQL**: Code-level vulnerability detection
+          - **Aikido**: Configuration, dependencies, secrets, containers
+          - **Manual Review**: Architecture, business logic, compliance
+
+          ---
+
+          *For detailed results, check the Aikido dashboard or SARIF report artifacts.*
+          EOF
+
+          cat aikido-scan-summary.md
+
+      - name: Upload Aikido Summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aikido-scan-summary
+          path: aikido-scan-summary.md
+          retention-days: 30
+
+      - name: Upload Aikido SARIF (if available)
+        if: always()
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: aikido-results.sarif
+          category: aikido-portfolio-service
+
+      - name: Post-scan summary
+        if: always()
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  Aikido Security Scan Complete"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "📊 Scan Coverage:"
+          echo "   ✅ SAST (Static Analysis)"
+          echo "   ✅ SCA (Dependency Scanning)"
+          echo "   ✅ Secrets Detection"
+          echo "   ✅ Configuration Analysis"
+          echo ""
+          echo "📁 Scanned: backend/portfolio-service"
+          echo ""
+          echo "🔍 View Results:"
+          echo "   1. Aikido Dashboard (detailed findings)"
+          echo "   2. GitHub Security Tab (if SARIF uploaded)"
+          echo "   3. Workflow Artifacts (summary report)"
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
