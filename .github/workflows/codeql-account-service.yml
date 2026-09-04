@@ -56,3 +56,19 @@ jobs:
         with:
           category: "/language:java-kotlin"
           upload: true
+          output: sarif-results
+
+      - name: Upload SARIF results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: sarif-results
+
+      - name: Show results summary
+        if: always()
+        run: |
+          echo "CodeQL analysis complete. Check Security tab for detailed findings."
+          if [ -d "sarif-results" ]; then
+            echo "SARIF files generated:"
+            ls -la sarif-results/
+          fi
