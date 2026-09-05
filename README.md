@@ -22,14 +22,34 @@ The demo lets a user register, open an investment account, deposit cash, buy and
 
 ## Purpose
 
-This demo exists to build hands-on experience with a specific tech stack:
+**⚠️ IMPORTANT DISCLAIMER**: This project is **NOT** a good example of banking application functionality or production-quality code. The codebase contains **purposeful security shortcomings** designed to test security scanning tools and DevSecOps practices. Do not use this as a reference for building production financial applications.
 
+### What This Project Really Is
+
+This is a **security testing sandbox** and **DevSecOps learning platform** that serves two primary purposes:
+
+#### 1. Kubernetes Security Architecture Testing
+Test and learn modern cloud-native security patterns:
 - **Service mesh (Istio) for mTLS** — all service-to-service communication between the Kotlin microservices inside the Kubernetes cluster is encrypted and authenticated by Envoy sidecars, with no application code changes. The services use Kafka topics to stream fund price updates and config changes.
 - **ArgoCD for GitOps** — the entire Kubernetes configuration (deployments, services, Istio resources, cert-manager, Keycloak, Kafka, PostgreSQL) lives in this Git repo and is reconciled by ArgoCD, making Git the single source of truth for the cluster state.
 - **PKI with cert-manager** — a private certificate authority issues the TLS certificate for the Istio ingress gateway, so the `*.mbd.local` hostnames are served over HTTPS with a certificate that can be trusted by the browser.
 - **Keycloak for SSO and JWT authentication** — both frontends sign in through a single Keycloak realm (single sign-on), and the resulting JWT is validated at the Istio edge and inside `admin-service`.
 
-The backend services are written in **Kotlin** with **Spring Boot**, the frontends in **React + Vite + TypeScript**, and everything runs in a local **OrbStack** Kubernetes cluster (a lightweight alternative to Kind that uses native macOS virtualization for lower CPU and memory overhead).
+#### 2. Security Scanning & OWASP Validation
+The codebase intentionally contains security vulnerabilities to enable comprehensive testing of various security scanning tools. See our detailed analysis:
+- **[Three-Way Security Tool Comparison](doc/OWASP%20validation/portfolio-service/Three-Way-Security-Tool-Comparison.md)** — Comparative analysis of CodeQL, Aikido, and manual OWASP Top 10 validation on the portfolio-service
+- Tests include: SAST (CodeQL), SCA (Aikido), secrets scanning, configuration analysis, and manual security review
+- **Key finding**: Automated tools (CodeQL, Aikido free tier) found 0 vulnerabilities, while manual review found 8 vulnerabilities including 3 CRITICAL issues (unsafe deserialization, missing authentication, missing authorization)
+
+### Work in Progress
+
+This project will **remain a work in progress** indefinitely. I use it as a learning platform to:
+- Test new security features (WAF, runtime protection, policy enforcement)
+- Experiment with DevSecOps tooling (security scanners, vulnerability management, compliance tools)
+- Validate Kubernetes security patterns (network policies, pod security standards, supply chain security)
+- Learn new cloud-native technologies
+
+The backend services are written in **Kotlin** with **Spring Boot**, the frontends in **React + Vite + TypeScript**, and everything runs in a local **single-node kind cluster** (Kubernetes in Docker).
 
 ---
 
@@ -245,13 +265,14 @@ PostgreSQL (holdings, accounts, transactions)
 | PKI / TLS | cert-manager (self-signed CA → leaf cert for `*.mbd.local`) |
 | GitOps | ArgoCD (app-of-apps, auto-sync, single source of truth) |
 | API docs | springdoc-openapi (Swagger UI at `/swagger-ui.html` per service) |
-| Cluster | OrbStack (local Kubernetes, lightweight alternative to Kind) |
+| Cluster | kind (single-node Kubernetes cluster in Docker) |
+| Security Testing | CodeQL, Aikido, manual OWASP Top 10 validation |
 
 ---
 
 ## Further reading
 
-For in-depth explanations, see:
+### Core Documentation
 
 - [Architecture overview](doc/architecture.md)
 - [Build & run operations](doc/operation-notes.md)
@@ -259,6 +280,19 @@ For in-depth explanations, see:
 - [Backend implementation guide](doc/backend-services-implementation.md)
 - [Frontend implementation guide](doc/frontend-implementation.md)
 - [Original plan and decisions](doc/plan-1.md)
+
+### Security & OWASP Validation
+
+- **[Three-Way Security Tool Comparison](doc/OWASP%20validation/portfolio-service/Three-Way-Security-Tool-Comparison.md)** — Detailed comparison of CodeQL vs Aikido vs Manual OWASP Top 10 validation
+- [CodeQL vs Manual Review Comparison](doc/OWASP%20validation/portfolio-service/CodeQL-vs-Manual-Review-Comparison.md) — Why automated tools missed critical vulnerabilities
+- [Aikido Setup Instructions](doc/OWASP%20validation/portfolio-service/Aikido-Setup-Instructions.md) — How to run Aikido security scans
+
+### Related Projects
+
+- **[k8-security](https://github.com/edwinbulter/k8-security)** — Additional Kubernetes and security experiments, exploring more security patterns and tooling beyond what's covered in this project
+
+### Infrastructure & Configuration
+
 - [Istio configuration README](infrastructure/k8s/istio/README.md)
 - [cert-manager PKI README](infrastructure/k8s/cert-manager/README.md)
 - [OpenAPI / Swagger UI](doc/improvements/05-openapi.md)
