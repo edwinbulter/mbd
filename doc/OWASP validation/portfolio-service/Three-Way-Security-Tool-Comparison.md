@@ -46,20 +46,24 @@ Three different security assessment approaches were applied to the same codebase
 
 ### OWASP Top 10 Category-by-Category
 
+**Uses the OWASP Top 10:2025 edition** (released January 2026 — the first update since 2021). This table was recategorized from the original 2021-edition version; see the note below it for what changed and how counts were derived.
+
 | OWASP Category | CodeQL | Aikido | Manual Review | Winner |
 |----------------|--------|--------|---------------|--------|
-| **A01: Broken Access Control** | ✅ Pass | ✅ Pass | 🔴 2 CRITICAL | Manual ⚠️ |
-| **A02: Cryptographic Failures** | ✅ Pass | ✅ Pass | ✅ Pass | All 🤝 |
-| **A03: Injection** | ✅ Pass | ✅ Pass | ✅ Pass | All 🤝 |
-| **A04: Insecure Design** | ✅ Pass | ✅ Pass | ⚠️ 1 MEDIUM | Manual ⚠️ |
-| **A05: Security Misconfiguration** | ✅ Pass | ✅ Pass | 🔴 1 HIGH | Manual ⚠️ |
-| **A06: Vulnerable Components** | N/A | ✅ Pass | ℹ️ Review | Aikido ✅ |
+| **A01: Broken Access Control** | ✅ Pass | ✅ Pass | 🔴 1 CRITICAL | Manual ⚠️ |
+| **A02: Security Misconfiguration** | ✅ Pass | ✅ Pass | ⚠️ 2 (1 MEDIUM, 1 LOW) | Manual ⚠️ |
+| **A03: Software Supply Chain Failures** | ℹ️ Not covered | ✅ Pass (SCA) | ℹ️ Not assessed | Aikido ✅ |
+| **A04: Cryptographic Failures** | ✅ Pass | ✅ Pass | ✅ Pass | All 🤝 |
+| **A05: Injection** | ✅ Pass | ✅ Pass | ✅ Pass | All 🤝 |
+| **A06: Insecure Design** | ✅ Pass | ✅ Pass | 🔴 1 HIGH | Manual ⚠️ |
 | **A07: Authentication Failures** | ✅ Pass | ✅ Pass | 🔴 1 CRITICAL | Manual ⚠️ |
-| **A08: Data Integrity Failures** | ✅ Pass | ✅ Pass | 🔴 1 CRITICAL | Manual ⚠️ |
-| **A09: Logging Failures** | ℹ️ Not covered | ✅ Pass | ⚠️ 2 MEDIUM | Manual ⚠️ |
-| **A10: SSRF** | ✅ Pass | ✅ Pass | ✅ Pass | All 🤝 |
+| **A08: Software or Data Integrity Failures** | ✅ Pass | ✅ Pass | 🔴 2 (1 CRITICAL, 1 MEDIUM) | Manual ⚠️ |
+| **A09: Security Logging and Alerting Failures** | ℹ️ Not covered | ✅ Pass | ⚠️ 1 MEDIUM | Manual ⚠️ |
+| **A10: Mishandling of Exceptional Conditions** | ℹ️ Not covered | ℹ️ Not covered | ℹ️ Not assessed | — |
 
 **Legend**: ✅ No issues | ⚠️ Issues found | 🔴 Critical issues | N/A Not scanned | ℹ️ Info
+
+**What changed from the 2021 edition, and how these counts were derived**: the 2025 edition dropped "Vulnerable and Outdated Components" and "SSRF" as standalone categories and added "Software Supply Chain Failures" (A03) and "Mishandling of Exceptional Conditions" (A10); Security Misconfiguration moved from #5 to #2, and Insecure Design moved from #4 to #6. Counts above reflect each of the 8 issues' **primary** category only (several issues also touch a secondary category — see the per-issue `OWASP Category` column in the Vulnerability Summary Table below and each issue's own subsection). A03 and A10 are new in 2025, so "not covered"/"not assessed" there reflects that none of the three methods specifically targeted those categories — not a confirmed pass.
 
 ---
 
@@ -102,20 +106,20 @@ Three different security assessment approaches were applied to the same codebase
 
 ### Vulnerability Summary Table
 
-| # | Vulnerability | Severity | CWE | OWASP Category | CodeQL | Aikido | Manual | Status |
+| # | Vulnerability | Severity | CWE | OWASP Category (2025) | CodeQL | Aikido | Manual | Status |
 |---|---------------|----------|-----|-----------------|--------|--------|--------|--------|
-| 1 | Unsafe Kafka deserialization (`spring.json.trusted.packages: "*"`) | CRITICAL | CWE-502 | **A08:2021** – Software and Data Integrity Failures (also A05 – Security Misconfiguration) | ❌ | ❌ | ✅ | **MISSED by both tools** |
-| 2 | No authentication implemented | CRITICAL | CWE-306 | **A07:2021** – Identification and Authentication Failures (also A01 – Broken Access Control) | ❌ | ❌ | ✅ | **MISSED by both tools** |
-| 3 | No authorization checks | CRITICAL | CWE-862 | **A01:2021** – Broken Access Control | ❌ | ❌ | ✅ | **MISSED by both tools** |
-| 4 | Race condition in distributed transaction | HIGH | CWE-367 | **A04:2021** – Insecure Design | ❌ | ❌ | ✅ | **MISSED by both tools** |
-| 5 | Exposed actuator endpoints | MEDIUM | - | **A05:2021** – Security Misconfiguration | ❌ | ❌ | ✅ | **MISSED by both tools** |
-| 6 | No audit logging for trades | MEDIUM | - | **A09:2021** – Security Logging and Monitoring Failures | ❌ | ❌ | ✅ | **MISSED by both tools** |
-| 7 | No Kafka message validation | MEDIUM | - | **A08:2021** – Software and Data Integrity Failures (also A04 – Insecure Design) | ❌ | ❌ | ✅ | **MISSED by both tools** |
-| 8 | Debug logging enabled | LOW | - | **A05:2021** – Security Misconfiguration (also A09 – Logging Failures, if sensitive data is logged) | ❌ | ❌ | ✅ | **MISSED by both tools** |
+| 1 | Unsafe Kafka deserialization (`spring.json.trusted.packages: "*"`) | CRITICAL | CWE-502 | **A08:2025** – Software or Data Integrity Failures (also A02 – Security Misconfiguration) | ❌ | ❌ | ✅ | **MISSED by both tools** |
+| 2 | No authentication implemented | CRITICAL | CWE-306 | **A07:2025** – Authentication Failures (also A01 – Broken Access Control) | ❌ | ❌ | ✅ | **MISSED by both tools** |
+| 3 | No authorization checks | CRITICAL | CWE-862 | **A01:2025** – Broken Access Control | ❌ | ❌ | ✅ | **MISSED by both tools** |
+| 4 | Race condition in distributed transaction | HIGH | CWE-367 | **A06:2025** – Insecure Design | ❌ | ❌ | ✅ | **MISSED by both tools** |
+| 5 | Exposed actuator endpoints | MEDIUM | - | **A02:2025** – Security Misconfiguration | ❌ | ❌ | ✅ | **MISSED by both tools** |
+| 6 | No audit logging for trades | MEDIUM | - | **A09:2025** – Security Logging and Alerting Failures | ❌ | ❌ | ✅ | **MISSED by both tools** |
+| 7 | No Kafka message validation | MEDIUM | - | **A08:2025** – Software or Data Integrity Failures (also A06 – Insecure Design) | ❌ | ❌ | ✅ | **MISSED by both tools** |
+| 8 | Debug logging enabled | LOW | - | **A02:2025** – Security Misconfiguration (also A09 – Logging and Alerting Failures, if sensitive data is logged) | ❌ | ❌ | ✅ | **MISSED by both tools** |
 
 **Result**: 8 out of 8 vulnerabilities (100%) were ONLY found by manual review.
 
-**Note on the OWASP Top 10 Category table above (§"OWASP Top 10 Category-by-Category")**: that earlier table's per-category counts were assigned loosely and don't line up 1:1 with the primary mappings above (e.g. it credits A01 with 2 CRITICAL findings, where only Issue #3 is unambiguously A01 — Issue #2 is more precisely A07, though it's reasonable to also view "no authentication at all" as a form of broken access control). Treat the mappings in this table as the authoritative per-issue classification; the summary table further up is a coarser view.
+**Note on OWASP edition**: these mappings use the **OWASP Top 10:2025** (released January 2026), not the 2021 edition this document originally referenced when these per-issue mappings were first added. Two of the eight primary mappings shifted numbers as a result: Issue #4 (Insecure Design) moved from A04:2021 to **A06:2025**, and Issue #5 (Security Misconfiguration) moved from A05:2021 to **A02:2025**, since Security Misconfiguration jumped from #5 to #2 in the new edition. Issues #1, #2, #3, #6 land on the same number in both editions by coincidence, not because those categories are unchanged. The category-by-category table above (§"OWASP Top 10 Category-by-Category") is kept consistent with these primary mappings — treat this table as the authoritative per-issue classification, and that one as the aggregated, coarser view.
 
 ---
 
@@ -125,7 +129,7 @@ Three different security assessment approaches were applied to the same codebase
 
 **Location**: `application.yml:31`
 
-**OWASP Category**: A08:2021 – Software and Data Integrity Failures (insecure deserialization is one of A08's flagship examples); also touches A05 – Security Misconfiguration, since the root cause is a wildcard trust setting rather than a code defect.
+**OWASP Category**: A08:2025 – Software or Data Integrity Failures (insecure deserialization is one of A08's flagship examples); also touches A02 – Security Misconfiguration, since the root cause is a wildcard trust setting rather than a code defect.
 
 **Vulnerability**:
 ```yaml
@@ -159,7 +163,7 @@ spring:
 
 **Location**: Entire service - no Spring Security configuration
 
-**OWASP Category**: A07:2021 – Identification and Authentication Failures; a system with no authentication at all is also a limiting case of A01 – Broken Access Control, since access control is meaningless without a verified identity to control access for.
+**OWASP Category**: A07:2025 – Authentication Failures; a system with no authentication at all is also a limiting case of A01 – Broken Access Control, since access control is meaningless without a verified identity to control access for.
 
 **Vulnerability**:
 ```kotlin
@@ -196,7 +200,7 @@ class PortfolioController {
 
 **Location**: `PortfolioController.kt`, `PortfolioService.kt`
 
-**OWASP Category**: A01:2021 – Broken Access Control. This is the canonical A01 case: an authenticated (or even unauthenticated) caller can act on resources — another customer's account and holdings — without any check that they're entitled to.
+**OWASP Category**: A01:2025 – Broken Access Control. This is the canonical A01 case: an authenticated (or even unauthenticated) caller can act on resources — another customer's account and holdings — without any check that they're entitled to.
 
 **Vulnerability**:
 ```kotlin
@@ -231,7 +235,7 @@ fun executeTrade(@RequestBody trade: TradeDto): ResponseEntity<HoldingDto> {
 
 **Location**: `PortfolioService.kt:48-57`
 
-**OWASP Category**: A04:2021 – Insecure Design. The check-then-act balance validation is a design-level gap, not a coding typo — the trade flow was never designed to account for concurrent execution, which is exactly the class of flaw A04 targets (as distinct from A03/A05, which are about implementation and configuration mistakes).
+**OWASP Category**: A06:2025 – Insecure Design. The check-then-act balance validation is a design-level gap, not a coding typo — the trade flow was never designed to account for concurrent execution, which is exactly the class of flaw A06 targets (as distinct from A05/A02, which are about implementation and configuration mistakes).
 
 **Vulnerability**:
 ```kotlin
@@ -265,7 +269,7 @@ accountClient.updateBalance(...)  // HTTP call 2 - TOCTOU gap!
 
 **Location**: `application.yml:36-40`
 
-**OWASP Category**: A05:2021 – Security Misconfiguration. This is the textbook A05 example: unnecessary management endpoints left enabled with default, unauthenticated access and verbose (`show-details: always`) output.
+**OWASP Category**: A02:2025 – Security Misconfiguration. This is the textbook A02 example: unnecessary management endpoints left enabled with default, unauthenticated access and verbose (`show-details: always`) output.
 
 **Vulnerability**:
 ```yaml
