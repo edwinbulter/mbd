@@ -18,6 +18,12 @@ spring:
     baseline-on-migrate: true
     baseline-version: 0
     table: portfolio_service_flyway_history
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://keycloak.mbd.local/realms/mbd
+          jwk-set-uri: http://keycloak.mbd-infra.svc.cluster.local:8080/realms/mbd/protocol/openid-connect/certs
   kafka:
     bootstrap-servers: kafka.mbd-infra.svc.cluster.local:9092
     producer:
