@@ -1,6 +1,6 @@
-# MBD — My Bank Demo
+# MBD
 
-MBD (My Bank Demo) is a demo investment-banking application. It is purely fictional and exists only for this learning project.
+MBD is a demo investment-banking application. It is purely fictional and exists only for this learning project.
 
 The demo lets a user register, open an investment account, deposit cash, buy and sell funds, and watch their portfolio value update over time as fund prices move. A separate admin frontend lets a bank employee manage funds and configure the price-update behaviour.
 
@@ -62,13 +62,13 @@ The backend services are written in **Kotlin** with **Spring Boot**, the fronten
 After logging in via Keycloak and opening an investment account, the customer sees their dashboard: total portfolio value, cash balance, number of holdings, a portfolio value history chart (updates as fund prices move), and a holdings table with a Sell action per row.
 
 
-![Customer dashboard](doc/screenshots/customer-dashboard.png)
+<img src="doc/screenshots/customer-dashboard.png" alt="Customer dashboard" width="414">
 
 #### Browse and buy funds
 
 The Funds page lists all available funds with their current price. The user picks a quantity and buys a fund, which debits the account balance and creates/updates a holding.
 
-![Buy fund](doc/screenshots/customer-buy-fund.png)
+<img src="doc/screenshots/customer-buy-fund.png" alt="Buy fund" width="409">
 
 
 ### Admin frontend (`https://admin.mbd.local`)
@@ -79,7 +79,7 @@ The admin frontend requires the `admin` realm role (assigned via the Keycloak ad
 
 The admin can create new funds (name, ISIN, initial price, volatility) and delete existing funds. Changing the price-update config (volatility + frequency) publishes a config event to Kafka, which `fund-service` consumes and applies to all funds.
 
-![Admin funds](doc/screenshots/admin-funds.png)
+<img src="doc/screenshots/admin-funds.png" alt="Admin funds" width="410">
 
 
 ### Kafbat UI (`https://kafbat.mbd.local`)
