@@ -39,7 +39,7 @@ Test and learn modern cloud-native security patterns:
 The codebase intentionally contains security vulnerabilities to enable comprehensive testing of various security scanning tools. See our detailed analysis:
 - **[Three-Way Security Tool Comparison](doc/OWASP%20validation/portfolio-service/Three-Way-Security-Tool-Comparison.md)** — Comparative analysis of CodeQL, Aikido, and manual OWASP Top 10 validation on the portfolio-service
 - Tests include: SAST (CodeQL), SCA (Aikido), secrets scanning, configuration analysis, and manual security review
-- **Key finding**: Automated tools (CodeQL, Aikido free tier) found 0 vulnerabilities, while manual review found 8 vulnerabilities including 3 CRITICAL issues (unsafe deserialization, missing authentication, missing authorization)
+- **Key finding**: Automated tools (CodeQL, Aikido free tier) found 0 vulnerabilities, while manual review found 8 vulnerabilities. 3 were reported as CRITICAL (unsafe deserialization, missing authentication, missing authorization); after verification 2 remain CRITICAL (unsafe deserialization, missing authorization), and missing authentication is HIGH
 
 ### Work in Progress
 
@@ -284,7 +284,7 @@ PostgreSQL (holdings, accounts, transactions)
 ### Security & OWASP Validation
 
 - **[Three-Way Security Tool Comparison](doc/OWASP%20validation/portfolio-service/Three-Way-Security-Tool-Comparison.md)** — Detailed comparison of CodeQL vs Aikido vs Manual OWASP Top 10 validation
-- [CodeQL vs Manual Review Comparison](doc/OWASP%20validation/portfolio-service/CodeQL-vs-Manual-Review-Comparison.md) — Why automated tools missed critical vulnerabilities
+- [Why Claude Finds What SAST Tools Miss](doc/OWASP%20validation/portfolio-service/Three-Way-Security-Tool-Comparison.md#why-claude-finds-what-sast-tools-miss) — Why automated tools missed critical vulnerabilities
 - [Aikido Setup Instructions](doc/OWASP%20validation/portfolio-service/Aikido-Setup-Instructions.md) — How to run Aikido security scans
 
 ### Related Projects

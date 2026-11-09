@@ -159,8 +159,8 @@ Based on manual review findings, Aikido should detect:
 
 - **Aikido Dashboard**: https://app.aikido.dev
 - **OWASP Top 10**: https://owasp.org/www-project-top-ten/
-- **Manual Review Report**: `OWASP-validation-result-portfolio-service-1.md`
-- **CodeQL Comparison**: `doc/OWASP validation/portfolio-service/CodeQL-vs-Manual-Review-Comparison.md`
+- **Manual Review Report**: [`claude-OWASP-validation-result.md`](./claude-OWASP-validation-result.md)
+- **Tool Comparison**: [`Three-Way-Security-Tool-Comparison.md`](./Three-Way-Security-Tool-Comparison.md)
 
 ---
 

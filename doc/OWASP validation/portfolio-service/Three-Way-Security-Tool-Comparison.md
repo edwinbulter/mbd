@@ -945,10 +945,10 @@ Two industry-leading security tools (CodeQL and Aikido) both reported **zero vul
 
 ## References
 
-- **CodeQL Results**: `doc/OWASP validation/portfolio-service/codeql-portfolio-service/` workflow
+- **CodeQL Results**: [`CodeQL-OWASP-validation-result.md`](./CodeQL-OWASP-validation-result.md) (workflow: `.github/workflows/codeql-portfolio-service.yml`)
 - **Aikido Results**: Aikido Dashboard (0 issues found)
-- **Manual Review**: `OWASP-validation-result-portfolio-service-1.md`
-- **CodeQL vs Manual Comparison**: `CodeQL-vs-Manual-Review-Comparison.md`
+- **Manual Review**: [`claude-OWASP-validation-result.md`](./claude-OWASP-validation-result.md)
+- **Fix analyses per issue**: `Issue-1-…` to `Issue-8-…-Fix-Analysis.md` in this folder
 - **Aikido Detailed Report**: `aikido-OWASP-validation-result.md`
 
 ---
